@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<type-mappings>
+    <db-type name="mysql">
+        <mapping jdbc="char" java="String"/>
+        <mapping jdbc="varchar" java="String"/>
+        <mapping jdbc="tinyblob" java="String"/>
+        <mapping jdbc="tinytext" java="String"/>
+        <mapping jdbc="blob" java="String"/>
+        <mapping jdbc="text" java="String"/>
+        <mapping jdbc="mediumblob" java="String"/>
+        <mapping jdbc="mediumtext" java="String"/>
+        <mapping jdbc="longblob" java="String"/>
+        <mapping jdbc="longtext" java="String"/>
+        <mapping jdbc="tinyint" java="int"/>
+        <mapping jdbc="smallint" java="int"/>
+        <mapping jdbc="mediumint" java="int"/>
+        <mapping jdbc="int" java="int"/>
+        <mapping jdbc="bigint" java="long"/>
+        <mapping jdbc="float" java="float"/>
+        <mapping jdbc="double" java="double"/>
+        <mapping jdbc="decimal" java="double"/>
+        <mapping jdbc="date" java="date"/>
+        <mapping jdbc="time" java="date"/>
+        <mapping jdbc="year" java="date"/>
+        <mapping jdbc="datetime" java="date"/>
+        <mapping jdbc="timestamp" java="date"/>
+    </db-type>
+</type-mappings>
