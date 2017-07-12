@@ -1,5 +1,7 @@
 package com.mathbeta.models.pdm;
 
+import com.mathbeta.models.common.Column;
+
 import javax.xml.bind.annotation.*;
 
 /**
@@ -7,15 +9,15 @@ import javax.xml.bind.annotation.*;
  */
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlRootElement(name = "o:Column")
-public class PDMColumn {
+public class PDMColumn implements Column {
     @XmlAttribute(name = "Id")
     private String id;
     @XmlAttribute(name = "Ref")
     private String ref;
     @XmlElement(name = "a:Name")
-    private String name;
+    private String description;
     @XmlElement(name = "a:Code")
-    private String code;
+    private String name;
     @XmlElement(name = "a:DataType")
     private String dataType;
     @XmlElement(name = "a:Length")
@@ -39,20 +41,20 @@ public class PDMColumn {
         this.ref = ref;
     }
 
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
     public String getName() {
         return name;
     }
 
     public void setName(String name) {
         this.name = name;
-    }
-
-    public String getCode() {
-        return code;
-    }
-
-    public void setCode(String code) {
-        this.code = code;
     }
 
     public String getDataType() {
@@ -69,6 +71,26 @@ public class PDMColumn {
 
     public void setLength(int length) {
         this.length = length;
+    }
+
+    @Override
+    public Object getDefaultValue() {
+        return null;
+    }
+
+    @Override
+    public void setDefaultValue(Object defaultValue) {
+
+    }
+
+    @Override
+    public void setNullable(boolean nullable) {
+
+    }
+
+    @Override
+    public boolean isNullable() {
+        return false;
     }
 
     public int getMandatory() {

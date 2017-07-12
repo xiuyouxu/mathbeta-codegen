@@ -1,5 +1,7 @@
 package com.mathbeta.models.pdm;
 
+import com.mathbeta.models.common.Table;
+
 import javax.xml.bind.annotation.*;
 import java.util.List;
 
@@ -8,11 +10,11 @@ import java.util.List;
  */
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlRootElement(name = "o:Table")
-public class PDMTable {
+public class PDMTable implements Table<PDMColumn, PDMKey> {
     @XmlElement(name = "a:Name")
-    private String name;
+    private String description;
     @XmlElement(name = "a:Code")
-    private String code;
+    private String name;
     @XmlElementWrapper(name = "c:Columns")
     @XmlElement(name = "o:Column")
     private List<PDMColumn> columns;
@@ -23,20 +25,30 @@ public class PDMTable {
     @XmlElement(name = "o:Key")
     private List<PDMKey> primaryKeys;
 
+    public String getDescription() {
+        return description;
+    }
+
+    @Override
+    public void setIsEntity(boolean isEntity) {
+
+    }
+
+    @Override
+    public boolean isEntity() {
+        return false;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
     public String getName() {
         return name;
     }
 
     public void setName(String name) {
         this.name = name;
-    }
-
-    public String getCode() {
-        return code;
-    }
-
-    public void setCode(String code) {
-        this.code = code;
     }
 
     public List<PDMColumn> getColumns() {

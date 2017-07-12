@@ -20,10 +20,10 @@
         <mapping jdbc="float" java="float"/>
         <mapping jdbc="double" java="double"/>
         <mapping jdbc="decimal" java="double"/>
-        <mapping jdbc="date" java="date"/>
-        <mapping jdbc="time" java="date"/>
-        <mapping jdbc="year" java="date"/>
-        <mapping jdbc="datetime" java="date"/>
-        <mapping jdbc="timestamp" java="date"/>
+        <mapping jdbc="date" java="Date"/>
+        <mapping jdbc="time" java="Date"/>
+        <mapping jdbc="year" java="Date"/>
+        <mapping jdbc="datetime" java="Date"/>
+        <mapping jdbc="timestamp" java="Date"/>
     </db-type>
 </type-mappings>

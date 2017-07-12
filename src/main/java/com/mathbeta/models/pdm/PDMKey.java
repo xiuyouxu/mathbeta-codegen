@@ -1,5 +1,7 @@
 package com.mathbeta.models.pdm;
 
+import com.mathbeta.models.common.Key;
+
 import javax.xml.bind.annotation.*;
 import java.util.List;
 
@@ -8,18 +10,18 @@ import java.util.List;
  */
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlRootElement(name = "o:Key")
-public class PDMKey {
+public class PDMKey implements Key<PDMColumn> {
     @XmlAttribute(name = "Id")
     private String id;
     @XmlAttribute(name = "Ref")
     private String ref;
     @XmlElement(name = "a:Name")
-    private String name;
+    private String description;
     @XmlElement(name = "a:Code")
-    private String code;
+    private String name;
     @XmlElementWrapper(name = "c:Key.Columns")
     @XmlElement(name = "o:Column")
-    private List<PDMColumn> keyColumns;
+    private List<PDMColumn> columns;
 
     public String getId() {
         return id;
@@ -37,6 +39,14 @@ public class PDMKey {
         this.ref = ref;
     }
 
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
     public String getName() {
         return name;
     }
@@ -45,19 +55,11 @@ public class PDMKey {
         this.name = name;
     }
 
-    public String getCode() {
-        return code;
+    public List<PDMColumn> getColumns() {
+        return columns;
     }
 
-    public void setCode(String code) {
-        this.code = code;
-    }
-
-    public List<PDMColumn> getKeyColumns() {
-        return keyColumns;
-    }
-
-    public void setKeyColumns(List<PDMColumn> keyColumns) {
-        this.keyColumns = keyColumns;
+    public void setColumns(List<PDMColumn> columns) {
+        this.columns = columns;
     }
 }

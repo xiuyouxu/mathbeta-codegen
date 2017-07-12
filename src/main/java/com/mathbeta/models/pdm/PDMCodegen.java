@@ -1,6 +1,7 @@
 package com.mathbeta.models.pdm;
 
-import com.mathbeta.models.ICodeGen;
+import com.mathbeta.models.ICodeGenerator;
+import com.mathbeta.models.IModel;
 import com.mathbeta.models.types.TypeMappingUtil;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
@@ -21,20 +22,25 @@ import java.util.stream.Collectors;
 /**
  * Created by xiuyou.xu on 2017/7/5.
  */
-public class PDMCodegen implements ICodeGen {
+public class PDMCodegen implements ICodeGenerator {
     public static void main(String[] args) {
         PDMCodegen codegen = new PDMCodegen(new File("D:\\documents\\工作文档\\项目文档\\MES\\mes-db.pdm"), "mes_");
 //        PDMCodegen codegen = new PDMCodegen(new File("d:/tables.xml"), "mes_");
-        codegen.read();
-        codegen.genEntity();
-        codegen.genRestful();
-        codegen.genDubbo();
-        codegen.genMapper();
+        PDMModel model = codegen.read();
+        codegen.generateCode(model);
+    }
+
+    @Override
+    public void generateCode(IModel model) {
+        PDMModel pdmModel = (PDMModel) model;
+        genEntity(pdmModel);
+        genRestful(pdmModel);
+        genDubbo(pdmModel);
+        genMapper(pdmModel);
     }
 
     private File input;
     private String tableNamePrefix;
-    private PDMModel model;
 
     public PDMCodegen(File input, String tableNamePrefix) {
         this.input = input;
@@ -43,51 +49,50 @@ public class PDMCodegen implements ICodeGen {
         new File(input.getParent(), "pdm-code-gen").mkdirs();
     }
 
-    public void read() {
-        if (model == null) {
-            try {
-                JAXBContext context = JAXBContext.newInstance(PDMModel.class);
-                Unmarshaller unmarshaller = context.createUnmarshaller();
+    public PDMModel read() {
+        try {
+            JAXBContext context = JAXBContext.newInstance(PDMModel.class);
+            Unmarshaller unmarshaller = context.createUnmarshaller();
 
-                final FileReader reader = new FileReader(input);
-                final SAXParserFactory sax = SAXParserFactory.newInstance();
-                // 忽略namespace
-                sax.setNamespaceAware(false);
-                final XMLReader xmlReader = sax.newSAXParser().getXMLReader();
-                final SAXSource saxSource = new SAXSource(xmlReader, new InputSource(reader));
+            final FileReader reader = new FileReader(input);
+            final SAXParserFactory sax = SAXParserFactory.newInstance();
+            // 忽略namespace
+            sax.setNamespaceAware(false);
+            final XMLReader xmlReader = sax.newSAXParser().getXMLReader();
+            final SAXSource saxSource = new SAXSource(xmlReader, new InputSource(reader));
 
-                model = (PDMModel) unmarshaller.unmarshal(saxSource);
-            } catch (JAXBException e) {
-                e.printStackTrace();
-            } catch (SAXException e) {
-                e.printStackTrace();
-            } catch (FileNotFoundException e) {
-                e.printStackTrace();
-            } catch (ParserConfigurationException e) {
-                e.printStackTrace();
-            }
+            PDMModel model = (PDMModel) unmarshaller.unmarshal(saxSource);
+            return model;
+        } catch (JAXBException e) {
+            e.printStackTrace();
+        } catch (SAXException e) {
+            e.printStackTrace();
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (ParserConfigurationException e) {
+            e.printStackTrace();
         }
+        return null;
     }
 
-    private void check() {
+    private void check(PDMModel model) {
         if (model == null) {
             throw new RuntimeException("model is null");
         }
     }
 
-    @Override
-    public void genEntity() {
-        check();
+    public void genEntity(PDMModel pdmModel) {
+        check(pdmModel);
         new File(input.getParent(), "pdm-code-gen/entity").mkdirs();
 
         // load type mappings
         Map<String, Map<String, String>> mappings = TypeMappingUtil.getMapping();
         Map<String, String> mapping = mappings.get("mysql");
 
-        List<PDMTable> tables = model.getRootObject().getChildren().get(0).getTables();
+        List<PDMTable> tables = pdmModel.getTables();
         if (tables != null && !tables.isEmpty()) {
             tables.stream().forEach(table -> {
-                String entityName = getEntityName(table.getCode(), true);
+                String entityName = getEntityName(table.getName(), true);
                 File file = new File(input.getParent() + "/pdm-code-gen/entity", entityName + ".java");
                 try (BufferedWriter bw = new BufferedWriter(new FileWriter(file))) {
                     bw.append("@ApiModel(value = \"").append(entityName).append("\")\r\n");
@@ -95,7 +100,7 @@ public class PDMCodegen implements ICodeGen {
                     List<PDMColumn> columns = table.getColumns();
                     if (columns != null && !columns.isEmpty()) {
                         columns.stream().filter(column -> {
-                            String code = column.getCode();
+                            String code = column.getName();
                             if ("id".equalsIgnoreCase(code) || "create_date".equalsIgnoreCase(code) || "update_date".equalsIgnoreCase(code)) {
                                 return false;
                             }
@@ -110,8 +115,8 @@ public class PDMCodegen implements ICodeGen {
                                     type = type.substring(0, type.indexOf("("));
                                 }
                                 String javaType = mapping.get(type);
-                                String field = getFieldName(column.getCode(), false);
-                                bw.append("\t@ApiModelProperty(value = \"").append(column.getName()).append("\")\r\n");
+                                String field = getFieldName(column.getName(), false);
+                                bw.append("\t@ApiModelProperty(value = \"").append(column.getDescription()).append("\")\r\n");
                                 bw.append("\tprivate ").append(javaType).append(" ").append(field).append(";\r\n");
                             } catch (IOException e) {
                                 e.printStackTrace();
@@ -119,7 +124,7 @@ public class PDMCodegen implements ICodeGen {
                         });
                         bw.append("\r\n\r\n");
                         columns.stream().filter(column -> {
-                            String code = column.getCode();
+                            String code = column.getName();
                             if ("id".equalsIgnoreCase(code) || "create_date".equalsIgnoreCase(code) || "update_date".equalsIgnoreCase(code)) {
                                 return false;
                             }
@@ -134,8 +139,8 @@ public class PDMCodegen implements ICodeGen {
                                     type = type.substring(0, type.indexOf("("));
                                 }
                                 String javaType = mapping.get(type);
-                                String field = getFieldName(column.getCode(), false);
-                                String getterSetterName = getEntityName(column.getCode(), false);
+                                String field = getFieldName(column.getName(), false);
+                                String getterSetterName = getEntityName(column.getName(), false);
                                 // generate getter, setter
                                 bw.append("\tpublic ").append(javaType).append(" get").append(getterSetterName).append("() {\r\n").append("\t\treturn ").append(field).append(";\r\n").append("\t}\r\n");
                                 bw.append("\tpublic void set").append(getterSetterName).append("(").append(javaType).append(" ").append(field).append(") {\r\n").append("\t\tthis.").append(field).append(" = ").append(field).append(";\r\n").append("\t}\r\n");
@@ -186,18 +191,17 @@ public class PDMCodegen implements ICodeGen {
         return String.valueOf(name.charAt(0)).toUpperCase() + name.substring(1);
     }
 
-    @Override
-    public void genRestful() {
-        check();
+    public void genRestful(PDMModel pdmModel) {
+        check(pdmModel);
         new File(input.getParent(), "pdm-code-gen/restful").mkdirs();
 
-        List<PDMTable> tables = model.getRootObject().getChildren().get(0).getTables();
+        List<PDMTable> tables = pdmModel.getTables();
         if (tables != null && !tables.isEmpty()) {
             tables.stream().forEach(table -> {
-                String entityName = getEntityName(table.getCode(), true);
+                String entityName = getEntityName(table.getName(), true);
                 File file = new File(input.getParent() + "/pdm-code-gen/restful", entityName + "RestServer.java");
                 try (BufferedWriter bw = new BufferedWriter(new FileWriter(file))) {
-                    bw.append("@Api(value = \"").append(table.getName()).append("\", description = \"").append(table.getName()).append("\")\r\n");
+                    bw.append("@Api(value = \"").append(table.getDescription()).append("\", description = \"").append(table.getDescription()).append("\")\r\n");
                     bw.append("@Path(RestConstants.RestPathPrefix.").append(entityName.toUpperCase()).append(")\r\n");
                     bw.append("public class ").append(entityName).append("RestServer extends BaseRestServerInterfaceImpl<").append(entityName).append("> {\r\n");
                     bw.append("\t@Override\r\n");
@@ -213,16 +217,15 @@ public class PDMCodegen implements ICodeGen {
         }
     }
 
-    @Override
-    public void genDubbo() {
-        check();
+    public void genDubbo(PDMModel pdmModel) {
+        check(pdmModel);
         new File(input.getParent(), "pdm-code-gen/dubbo/impl").mkdirs();
 
-        List<PDMTable> tables = model.getRootObject().getChildren().get(0).getTables();
+        List<PDMTable> tables = pdmModel.getTables();
         if (tables != null && !tables.isEmpty()) {
             tables.stream().forEach(table -> {
-                String entityName = getEntityName(table.getCode(), true);
-                String field = getFieldName(table.getCode(), true);
+                String entityName = getEntityName(table.getName(), true);
+                String field = getFieldName(table.getName(), true);
                 // dubbo interface
                 File file = new File(input.getParent() + "/pdm-code-gen/dubbo", "I" + entityName + "Provider.java");
                 try (BufferedWriter bw = new BufferedWriter(new FileWriter(file))) {
@@ -241,7 +244,7 @@ public class PDMCodegen implements ICodeGen {
                     bw.append("\t@Qualifier(\"").append(field).append("Mapper\")\r\n");
                     bw.append("\tprivate ").append(entityName).append("Mapper ").append(field).append("Mapper;\r\n\r\n");
                     bw.append("\t@Override\r\n");
-                    bw.append("\tpublic BaseInterfaceMapper<").append(entityName).append("> getBaseInterfaceMapper() {\r\n");
+                    bw.append("\tpublic ").append(entityName).append("Mapper getBaseInterfaceMapper() {\r\n");
                     bw.append("\t\treturn ").append(field).append("Mapper;\r\n");
                     bw.append("\t}\r\n");
                     bw.append("}\r\n");
@@ -255,8 +258,8 @@ public class PDMCodegen implements ICodeGen {
             File consumer1 = new File(input.getParent() + "/pdm-code-gen/dubbo", "Consumer.java");
             try (BufferedWriter bw = new BufferedWriter(new FileWriter(consumer1))) {
                 tables.stream().forEach(table -> {
-                    String entityName = getEntityName(table.getCode(), true);
-                    String field = getFieldName(table.getCode(), true);
+                    String entityName = getEntityName(table.getName(), true);
+                    String field = getFieldName(table.getName(), true);
 
                     try {
                         bw.append("\tpublic static I").append(entityName).append("Provider get").append(entityName).append("Provider() {\r\n");
@@ -282,11 +285,11 @@ public class PDMCodegen implements ICodeGen {
             File consumer2 = new File(input.getParent() + "/pdm-code-gen/dubbo", "consumer.xml");
             try (BufferedWriter bw = new BufferedWriter(new FileWriter(consumer2))) {
                 tables.stream().forEach(table -> {
-                    String entityName = getEntityName(table.getCode(), true);
-                    String field = getFieldName(table.getCode(), true);
+                    String entityName = getEntityName(table.getName(), true);
+                    String field = getFieldName(table.getName(), true);
 
                     try {
-                        bw.append("\t<!-- ").append(table.getName()).append(" -->\r\n");
+                        bw.append("\t<!-- ").append(table.getDescription()).append(" -->\r\n");
                         bw.append("\t<dubbo:reference id=\"").append(field).append("Provider\" interface=\"com.mes.dubbo.interprovider.control.I").append(entityName).append("Provider\" timeout=\"20000\"/>\r\n\r\n");
                     } catch (IOException e) {
                         e.printStackTrace();
@@ -302,11 +305,11 @@ public class PDMCodegen implements ICodeGen {
             File provider = new File(input.getParent() + "/pdm-code-gen/dubbo", "provider.xml");
             try (BufferedWriter bw = new BufferedWriter(new FileWriter(provider))) {
                 tables.stream().forEach(table -> {
-                    String entityName = getEntityName(table.getCode(), true);
-                    String field = getFieldName(table.getCode(), true);
+                    String entityName = getEntityName(table.getName(), true);
+                    String field = getFieldName(table.getName(), true);
 
                     try {
-                        bw.append("\t<!-- ").append(table.getName()).append(" -->\r\n");
+                        bw.append("\t<!-- ").append(table.getDescription()).append(" -->\r\n");
                         bw.append("\t<bean id=\"").append(field).append("Provider\" class=\"com.mes.control.provider.").append(entityName).append("ProviderImpl\"/>\r\n");
                         bw.append("\t<dubbo:service interface=\"com.mes.dubbo.interprovider.control.I").append(entityName).append("Provider\" ref=\"").append(field).append("Provider\" retries=\"0\" protocol=\"dubbo\"/>\r\n\r\n");
                     } catch (IOException e) {
@@ -321,16 +324,15 @@ public class PDMCodegen implements ICodeGen {
         }
     }
 
-    @Override
-    public void genMapper() {
-        check();
+    public void genMapper(PDMModel pdmModel) {
+        check(pdmModel);
         new File(input.getParent(), "pdm-code-gen/mapper/xml").mkdirs();
 
-        List<PDMTable> tables = model.getRootObject().getChildren().get(0).getTables();
+        List<PDMTable> tables = pdmModel.getTables();
         if (tables != null && !tables.isEmpty()) {
             tables.stream().forEach(table -> {
-                String entityName = getEntityName(table.getCode(), true);
-                String field = getFieldName(table.getCode(), true);
+                String entityName = getEntityName(table.getName(), true);
+                String field = getFieldName(table.getName(), true);
                 // mapper interface
                 File file = new File(input.getParent() + "/pdm-code-gen/mapper", entityName + "Mapper.java");
                 try (BufferedWriter bw = new BufferedWriter(new FileWriter(file))) {
@@ -355,10 +357,19 @@ public class PDMCodegen implements ICodeGen {
                         columns.stream().forEach(column -> {
                             try {
                                 String type = column.getDataType();
+                                if (type == null) {
+                                    return;
+                                }
                                 if (type != null && type.contains("(")) {
                                     type = type.substring(0, type.indexOf("("));
                                 }
-                                bw.append("\t\t<result column=\"").append(column.getCode()).append("\" property=\"").append(getFieldName(column.getCode(), false)).append("\" jdbcType=\"").append(type).append("\"/>\r\n");
+                                if ("datetime".equalsIgnoreCase(type)) {
+                                    type = "date";
+                                }
+                                if ("int".equalsIgnoreCase(type)) {
+                                    type = "INTEGER";
+                                }
+                                bw.append("\t\t<result column=\"").append(column.getName()).append("\" property=\"").append(getFieldName(column.getName(), false)).append("\" jdbcType=\"").append(type.toUpperCase()).append("\"/>\r\n");
                             } catch (IOException e) {
                                 e.printStackTrace();
                             }
@@ -375,66 +386,154 @@ public class PDMCodegen implements ICodeGen {
                     // save
                     bw.append("\t<!--新增操作 -->\r\n");
                     bw.append("\t<insert id=\"save\" parameterType=\"com.mes.entity.control.").append(entityName).append("\">\r\n");
-                    bw.append("\t\tinsert into ").append(table.getCode()).append(" (");
+                    bw.append("\t\tinsert into ").append(table.getName()).append(" (");
                     if (columns != null && !columns.isEmpty()) {
                         bw.append(String.join(",", columns.stream().map(column -> {
-                            return column.getCode();
+                            return column.getName();
                         }).collect(Collectors.toList())));
                     }
                     bw.append(")\r\n\t\tvalues (");
                     if (columns != null && !columns.isEmpty()) {
                         List<String> names = new ArrayList<>();
                         bw.append(String.join(",", columns.stream().map(column -> {
-                            return "#{" + getFieldName(column.getCode(), false) + "}";
+                            return "#{" + getFieldName(column.getName(), false) + "}";
                         }).collect(Collectors.toList())));
                     }
                     bw.append(")\r\n");
                     bw.append("\t</insert>\r\n\r\n");
                     bw.append("\t<!--更新操作-->\r\n");
                     bw.append("\t<update id=\"update\" parameterType=\"com.mes.entity.control.").append(entityName).append("\">\r\n");
-                    bw.append("\t\tupdate ").append(table.getCode()).append(" s <include refid=\"sql_update\"/> where s.id = #{id}\r\n");
+                    bw.append("\t\tupdate ").append(table.getName()).append(" s <include refid=\"sql_update\"/> where s.id = #{id}\r\n");
                     bw.append("\t</update>\r\n\r\n");
                     bw.append("\t<!--根据id删除-->\r\n");
                     bw.append("\t<delete id=\"deleteById\" parameterType=\"java.lang.String\">\r\n");
-                    bw.append("\t\tdelete from ").append(table.getCode()).append(" where id =#{id}\r\n");
+                    bw.append("\t\tdelete from ").append(table.getName()).append(" where id =#{id}\r\n");
                     bw.append("\t</delete>\r\n\r\n");
                     bw.append("\t<!--获取数据条数-->\r\n");
                     bw.append("\t<select id=\"getCount\" parameterType=\"java.util.Map\" resultType=\"int\">\r\n");
-                    bw.append("\t\tselect count(1) from ").append(table.getCode()).append(" t <include refid=\"sql_where\"/>\r\n");
+                    bw.append("\t\tselect count(1) from ").append(table.getName()).append(" t <include refid=\"sql_where_and_equal\"/>\r\n");
                     bw.append("\t</select>\r\n\r\n");
                     bw.append("\t<!--分页查询-->\r\n");
                     bw.append("\t<select id=\"findByPage\" parameterType=\"java.util.Map\" resultMap=\"").append(field).append("ResultMap\">\r\n");
-                    bw.append("\t\t<include refid=\"sql_select\"/> <include refid=\"sql_where\"/> order by s.create_date desc limit #{startRowNum},#{pageSize}\r\n");
+                    bw.append("\t\t<include refid=\"sql_select\"/> <include refid=\"sql_where_and_equal\"/> order by s.create_date desc limit #{startRowNum},#{pageSize}\r\n");
                     bw.append("\t</select>\r\n\r\n");
                     bw.append("\t<!--根据条件查询-->\r\n");
                     bw.append("\t<select id=\"findByMap\" parameterType=\"java.util.Map\" resultMap=\"").append(field).append("ResultMap\">\r\n");
-                    bw.append("\t\t<include refid=\"sql_select\"/> <include refid=\"sql_where\"/> order by s.create_date desc\r\n");
+                    bw.append("\t\t<include refid=\"sql_select\"/> <include refid=\"sql_where_and_equal\"/> order by s.create_date desc\r\n");
                     bw.append("\t</select>\r\n\r\n");
                     bw.append("\t<!--查询所有-->\r\n");
                     bw.append("\t<select id=\"findAll\" resultMap=\"").append(field).append("ResultMap\">\r\n");
-                    bw.append("\t\t<include refid=\"sql_select\"/> <include refid=\"sql_where\"/> order by s.create_date desc\r\n");
+                    bw.append("\t\t<include refid=\"sql_select\"/> <include refid=\"sql_where_and_equal\"/> order by s.create_date desc\r\n");
                     bw.append("\t</select>\r\n\r\n");
                     bw.append("\t<!--查询字段-->\r\n");
                     bw.append("\t<sql id=\"sql_select\">\r\n");
-                    bw.append("\t\tSELECT id,parent_id,name,code,description,create_date,update_date from ").append(table.getCode()).append(" s\r\n");
+                    bw.append("\t\tSELECT ");
+                    if (columns != null && !columns.isEmpty()) {
+                        bw.append(String.join(",", columns.stream().map(column -> {
+                            return column.getName();
+                        }).collect(Collectors.toList())));
+                    }
+                    bw.append(" from ").append(table.getName()).append(" s\r\n");
                     bw.append("\t</sql>\r\n\r\n");
                     bw.append("\t<!--查询条件-->\r\n");
-                    bw.append("\t<sql id=\"sql_where\">\r\n");
+                    bw.append("\t<sql id=\"sql_where_and_equal\">\r\n");
                     bw.append("\t\t<where>\r\n");
                     if (columns != null && !columns.isEmpty()) {
                         columns.stream().filter(column -> {
                             // 过滤掉主键
                             return table.getKeys().stream().noneMatch(key -> {
-                                return key.getKeyColumns().stream().anyMatch(k -> {
+                                return key.getColumns().stream().anyMatch(k -> {
                                     return column.getId().equals(k.getRef());
                                 });
                             });
                         }).forEach(column -> {
                             try {
-                                String fieldName = getFieldName(column.getCode(), false);
+                                String fieldName = getFieldName(column.getName(), false);
                                 bw.append("\t\t\t<if test=\"").append(fieldName).append(" != null  and ").append(fieldName).append(" != '' \">\r\n");
                                 bw.append("\t\t\t\t<![CDATA[\r\n");
-                                bw.append("\t\t\t\t\tand ").append(column.getCode()).append(" LIKE CONCAT('%', #{").append(fieldName).append("}, '%')\r\n");
+//                                bw.append("\t\t\t\t\tand ").append(column.getDescription()).append(" LIKE CONCAT('%', #{").append(fieldName).append("}, '%')\r\n");
+                                bw.append("\t\t\t\t\tand ").append(column.getName()).append(" = #{").append(fieldName).append("}\r\n");
+                                bw.append("\t\t\t\t]]>\r\n");
+                                bw.append("\t\t\t</if>\r\n");
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            }
+                        });
+                    }
+                    bw.append("\t\t</where>\r\n");
+                    bw.append("\t</sql>\r\n\r\n");
+                    bw.append("\t<!--查询条件-->\r\n");
+                    bw.append("\t<sql id=\"sql_where_or_equal\">\r\n");
+                    bw.append("\t\t<where>\r\n");
+                    if (columns != null && !columns.isEmpty()) {
+                        columns.stream().filter(column -> {
+                            // 过滤掉主键
+                            return table.getKeys().stream().noneMatch(key -> {
+                                return key.getColumns().stream().anyMatch(k -> {
+                                    return column.getId().equals(k.getRef());
+                                });
+                            });
+                        }).forEach(column -> {
+                            try {
+                                String fieldName = getFieldName(column.getName(), false);
+                                bw.append("\t\t\t<if test=\"").append(fieldName).append(" != null  and ").append(fieldName).append(" != '' \">\r\n");
+                                bw.append("\t\t\t\t<![CDATA[\r\n");
+//                                bw.append("\t\t\t\t\tand ").append(column.getDescription()).append(" LIKE CONCAT('%', #{").append(fieldName).append("}, '%')\r\n");
+                                bw.append("\t\t\t\t\tor ").append(column.getName()).append(" = #{").append(fieldName).append("}\r\n");
+                                bw.append("\t\t\t\t]]>\r\n");
+                                bw.append("\t\t\t</if>\r\n");
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            }
+                        });
+                    }
+                    bw.append("\t\t</where>\r\n");
+                    bw.append("\t</sql>\r\n\r\n");
+                    bw.append("\t<!--查询条件-->\r\n");
+                    bw.append("\t<sql id=\"sql_where_and_like\">\r\n");
+                    bw.append("\t\t<where>\r\n");
+                    if (columns != null && !columns.isEmpty()) {
+                        columns.stream().filter(column -> {
+                            // 过滤掉主键
+                            return table.getKeys().stream().noneMatch(key -> {
+                                return key.getColumns().stream().anyMatch(k -> {
+                                    return column.getId().equals(k.getRef());
+                                });
+                            });
+                        }).forEach(column -> {
+                            try {
+                                String fieldName = getFieldName(column.getName(), false);
+                                bw.append("\t\t\t<if test=\"").append(fieldName).append(" != null  and ").append(fieldName).append(" != '' \">\r\n");
+                                bw.append("\t\t\t\t<![CDATA[\r\n");
+//                                bw.append("\t\t\t\t\tand ").append(column.getDescription()).append(" LIKE CONCAT('%', #{").append(fieldName).append("}, '%')\r\n");
+                                bw.append("\t\t\t\t\tand ").append(column.getName()).append(" like CONCAT('%', #{").append(fieldName).append("}, '%')\r\n");
+                                bw.append("\t\t\t\t]]>\r\n");
+                                bw.append("\t\t\t</if>\r\n");
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            }
+                        });
+                    }
+                    bw.append("\t\t</where>\r\n");
+                    bw.append("\t</sql>\r\n\r\n");
+                    bw.append("\t<!--查询条件-->\r\n");
+                    bw.append("\t<sql id=\"sql_where_or_like\">\r\n");
+                    bw.append("\t\t<where>\r\n");
+                    if (columns != null && !columns.isEmpty()) {
+                        columns.stream().filter(column -> {
+                            // 过滤掉主键
+                            return table.getKeys().stream().noneMatch(key -> {
+                                return key.getColumns().stream().anyMatch(k -> {
+                                    return column.getId().equals(k.getRef());
+                                });
+                            });
+                        }).forEach(column -> {
+                            try {
+                                String fieldName = getFieldName(column.getName(), false);
+                                bw.append("\t\t\t<if test=\"").append(fieldName).append(" != null  and ").append(fieldName).append(" != '' \">\r\n");
+                                bw.append("\t\t\t\t<![CDATA[\r\n");
+//                                bw.append("\t\t\t\t\tand ").append(column.getDescription()).append(" LIKE CONCAT('%', #{").append(fieldName).append("}, '%')\r\n");
+                                bw.append("\t\t\t\t\tor ").append(column.getName()).append(" like CONCAT('%', #{").append(fieldName).append("}, '%')\r\n");
                                 bw.append("\t\t\t\t]]>\r\n");
                                 bw.append("\t\t\t</if>\r\n");
                             } catch (IOException e) {
@@ -450,16 +549,16 @@ public class PDMCodegen implements ICodeGen {
                     if (columns != null && !columns.isEmpty()) {
                         columns.stream().filter(column -> {
                             return table.getKeys().stream().noneMatch(key -> {
-                                return key.getKeyColumns().stream().anyMatch(k -> {
+                                return key.getColumns().stream().anyMatch(k -> {
                                     return column.getId().equals(k.getRef());
                                 });
                             });
                         }).forEach(column -> {
                             try {
-                                String fieldName = getFieldName(column.getCode(), false);
+                                String fieldName = getFieldName(column.getName(), false);
                                 bw.append("\t\t\t<if test=\"").append(fieldName).append(" != null  and ").append(fieldName).append(" != '' \">\r\n");
                                 bw.append("\t\t\t\t<![CDATA[\r\n");
-                                bw.append("\t\t\t\t\t").append(column.getCode()).append(" = #{").append(fieldName).append("},\r\n");
+                                bw.append("\t\t\t\t\t").append(column.getName()).append(" = #{").append(fieldName).append("},\r\n");
                                 bw.append("\t\t\t\t]]>\r\n");
                                 bw.append("\t\t\t</if>\r\n");
                             } catch (IOException e) {
@@ -477,13 +576,5 @@ public class PDMCodegen implements ICodeGen {
                 }
             });
         }
-    }
-
-    public PDMModel getModel() {
-        return model;
-    }
-
-    public void setModel(PDMModel model) {
-        this.model = model;
     }
 }
