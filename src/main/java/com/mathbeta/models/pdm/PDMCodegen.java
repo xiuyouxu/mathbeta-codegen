@@ -97,7 +97,7 @@ public class PDMCodegen implements ICodeGenerator {
                 try (BufferedWriter bw = new BufferedWriter(new FileWriter(file))) {
                     bw.append("import com.mes.common.framework.domain.TrackableEntity;\r\n");
                     bw.append("import io.swagger.annotations.ApiModel;\r\n");
-                    bw.append("import io.swagger.annotations.ApiModelProperty;\r\n");
+                    bw.append("import io.swagger.annotations.ApiModelProperty;\r\n\r\n");
                     bw.append("@ApiModel(value = \"").append(entityName).append("\", description = \"").append(table.getDescription()).append("\")\r\n");
                     bw.append("public class ").append(entityName).append(" extends TrackableEntity {\r\n");
                     List<PDMColumn> columns = table.getColumns();
@@ -240,7 +240,7 @@ public class PDMCodegen implements ICodeGenerator {
                 File file = new File(input.getParent() + "/pdm-code-gen/dubbo", "I" + entityName + "Provider.java");
                 try (BufferedWriter bw = new BufferedWriter(new FileWriter(file))) {
                     bw.append("import com.mes.common.framework.dubbo.DubboBaseInterface;\r\n");
-                    bw.append("import com.mes.entity.control.").append(entityName).append(";\r\n");
+                    bw.append("import com.mes.entity.control.").append(entityName).append(";\r\n\r\n");
                     bw.append("public interface I").append(entityName).append("Provider extends DubboBaseInterface<").append(entityName).append("> {\r\n");
                     bw.append("}\r\n");
                     bw.flush();
@@ -458,6 +458,25 @@ public class PDMCodegen implements ICodeGenerator {
                     bw.append("\t<sql id=\"sql_where_and_equal\">\r\n");
                     bw.append("\t\t<where>\r\n");
                     if (columns != null && !columns.isEmpty()) {
+                        // 添加模糊查询
+                        bw.append("\t\t\t<if test=\"search != null and search != '' \">\r\n");
+                        bw.append("\t\t\t\tand (\r\n");
+                        columns.stream().filter(column -> {
+                            // 过滤掉主键
+                            return table.getKeys().stream().noneMatch(key -> {
+                                return key.getColumns().stream().anyMatch(k -> {
+                                    return column.getId().equals(k.getRef());
+                                });
+                            });
+                        }).forEach(column -> {
+                            try {
+                                bw.append("\t\t\t\tor ").append(column.getName()).append(" like CONCAT('%', #{search}, '%')\r\n");
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            }
+                        });
+                        bw.append("\t\t\t\t)\r\n\t\t\t</if>\r\n");
+
                         columns.stream().filter(column -> {
                             // 过滤掉主键
                             return table.getKeys().stream().noneMatch(key -> {
