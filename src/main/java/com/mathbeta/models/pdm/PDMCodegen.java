@@ -95,7 +95,10 @@ public class PDMCodegen implements ICodeGenerator {
                 String entityName = getEntityName(table.getName(), true);
                 File file = new File(input.getParent() + "/pdm-code-gen/entity", entityName + ".java");
                 try (BufferedWriter bw = new BufferedWriter(new FileWriter(file))) {
-                    bw.append("@ApiModel(value = \"").append(entityName).append("\")\r\n");
+                    bw.append("import com.mes.common.framework.domain.TrackableEntity;\r\n");
+                    bw.append("import io.swagger.annotations.ApiModel;\r\n");
+                    bw.append("import io.swagger.annotations.ApiModelProperty;\r\n");
+                    bw.append("@ApiModel(value = \"").append(entityName).append("\", description = \"").append(table.getDescription()).append("\")\r\n");
                     bw.append("public class ").append(entityName).append(" extends TrackableEntity {\r\n");
                     List<PDMColumn> columns = table.getColumns();
                     if (columns != null && !columns.isEmpty()) {
@@ -201,6 +204,13 @@ public class PDMCodegen implements ICodeGenerator {
                 String entityName = getEntityName(table.getName(), true);
                 File file = new File(input.getParent() + "/pdm-code-gen/restful", entityName + "RestServer.java");
                 try (BufferedWriter bw = new BufferedWriter(new FileWriter(file))) {
+                    bw.append("import com.mes.common.framework.rest.impl.BaseRestServerInterfaceImpl;\r\n");
+                    bw.append("import com.mes.dubbo.consumer.ControlConsumer;\r\n");
+                    bw.append("import com.mes.dubbo.interprovider.control.I").append(entityName).append("Provider;\r\n");
+                    bw.append("import com.mes.entity.control.").append(entityName).append(";\r\n");
+                    bw.append("import com.mes.utils.RestConstants;\r\n");
+                    bw.append("import io.swagger.annotations.Api;\r\n\r\n");
+                    bw.append("import javax.ws.rs.Path;\r\n\r\n");
                     bw.append("@Api(value = \"").append(table.getDescription()).append("\", description = \"").append(table.getDescription()).append("\")\r\n");
                     bw.append("@Path(RestConstants.RestPathPrefix.").append(entityName.toUpperCase()).append(")\r\n");
                     bw.append("public class ").append(entityName).append("RestServer extends BaseRestServerInterfaceImpl<").append(entityName).append("> {\r\n");
@@ -229,6 +239,8 @@ public class PDMCodegen implements ICodeGenerator {
                 // dubbo interface
                 File file = new File(input.getParent() + "/pdm-code-gen/dubbo", "I" + entityName + "Provider.java");
                 try (BufferedWriter bw = new BufferedWriter(new FileWriter(file))) {
+                    bw.append("import com.mes.common.framework.dubbo.DubboBaseInterface;\r\n");
+                    bw.append("import com.mes.entity.control.").append(entityName).append(";\r\n");
                     bw.append("public interface I").append(entityName).append("Provider extends DubboBaseInterface<").append(entityName).append("> {\r\n");
                     bw.append("}\r\n");
                     bw.flush();
@@ -239,6 +251,11 @@ public class PDMCodegen implements ICodeGenerator {
                 // dubbo impl
                 File impl = new File(input.getParent() + "/pdm-code-gen/dubbo/impl", entityName + "ProviderImpl.java");
                 try (BufferedWriter bw = new BufferedWriter(new FileWriter(impl))) {
+                    bw.append("import com.mes.control.mapper.").append(entityName).append("Mapper;\r\n");
+                    bw.append("import com.mes.dubbo.interprovider.control.I").append(entityName).append("Provider;\r\n");
+                    bw.append("import com.mes.entity.control.").append(entityName).append(";\r\n");
+                    bw.append("import org.springframework.beans.factory.annotation.Autowired;\r\n");
+                    bw.append("import org.springframework.beans.factory.annotation.Qualifier;\r\n\r\n");
                     bw.append("public class ").append(entityName).append("ProviderImpl extends BaseProviderImpl<").append(entityName).append("> implements I").append(entityName).append("Provider {\r\n");
                     bw.append("\t@Autowired\r\n");
                     bw.append("\t@Qualifier(\"").append(field).append("Mapper\")\r\n");
@@ -336,6 +353,8 @@ public class PDMCodegen implements ICodeGenerator {
                 // mapper interface
                 File file = new File(input.getParent() + "/pdm-code-gen/mapper", entityName + "Mapper.java");
                 try (BufferedWriter bw = new BufferedWriter(new FileWriter(file))) {
+                    bw.append("import com.mes.common.framework.mapper.BaseInterfaceMapper;\r\n");
+                    bw.append("import com.mes.entity.control.Dept;\r\n\r\n");
                     bw.append("public interface ").append(entityName).append("Mapper extends BaseInterfaceMapper<").append(entityName).append("> {\r\n");
                     bw.append("}\r\n");
                     bw.flush();

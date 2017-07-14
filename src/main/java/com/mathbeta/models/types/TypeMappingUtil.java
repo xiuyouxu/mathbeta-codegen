@@ -15,7 +15,7 @@ public class TypeMappingUtil {
         try {
             JAXBContext context = JAXBContext.newInstance(TypeMapping.class);
             Unmarshaller unmarshaller = context.createUnmarshaller();
-//
+
 //            final FileReader reader = new FileReader(input);
 //            final SAXParserFactory sax = SAXParserFactory.newInstance();
 //            // 忽略namespace
