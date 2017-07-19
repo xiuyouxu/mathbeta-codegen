@@ -100,4 +100,12 @@ public class PDMColumn implements Column {
     public void setMandatory(int mandatory) {
         this.mandatory = mandatory;
     }
+
+//    public boolean equals(Object o) {
+//        if (o != null && o instanceof PDMColumn) {
+//            PDMColumn column = (PDMColumn) o;
+//            return column.getName().equalsIgnoreCase(this.getName());
+//        }
+//        return false;
+//    }
 }

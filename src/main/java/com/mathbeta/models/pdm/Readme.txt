@@ -1,0 +1,3 @@
+根据pdm文件生成代码。
+
+首先使用power designer进行系统中的表设计，然后将设计完成后的pdm文件作为输入，调用PDMCodegen即可生成包括实体类，Restful接口，Dubbo接口，mybatis Mapper类和xml配置文件在内的所有代码。
