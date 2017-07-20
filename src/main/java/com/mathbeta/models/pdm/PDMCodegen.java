@@ -132,7 +132,7 @@ public class PDMCodegen implements ICodeGenerator {
                 tables.stream().forEach(table -> {
                     try {
                         bw.append("DROP TABLE IF EXISTS `").append(table.getName()).append("`;\r\n");
-                        bw.append("CREATE TABLE `").append(table.getName()).append("` (\r\n");
+                        bw.append("CREATE TABLE IF NOT EXISTS `").append(table.getName()).append("` (\r\n");
 
                         List<PDMKey> keys = table.getKeys();
                         List<PDMColumn> columns = table.getColumns();
@@ -533,8 +533,8 @@ public class PDMCodegen implements ICodeGenerator {
                                 if (type != null && type.contains("(")) {
                                     type = type.substring(0, type.indexOf("("));
                                 }
-                                if ("datetime".equalsIgnoreCase(type)) {
-                                    type = "date";
+                                if ("date".equalsIgnoreCase(type) || "datetime".equalsIgnoreCase(type)) {
+                                    type = "TIMESTAMP";
                                 }
                                 if ("int".equalsIgnoreCase(type)) {
                                     type = "INTEGER";
