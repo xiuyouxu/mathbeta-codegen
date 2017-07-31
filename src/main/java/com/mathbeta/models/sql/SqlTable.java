@@ -1,6 +1,6 @@
 package com.mathbeta.models.sql;
 
-import com.mathbeta.models.common.Table;
+import com.mathbeta.models.Table;
 
 import java.util.List;
 

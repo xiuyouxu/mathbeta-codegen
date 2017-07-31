@@ -28,8 +28,11 @@ public class ParserTest {
                             System.out.println(createTable.getTable().getName());
                             System.out.println(createTable.getTableOptionsStrings());
                             definitions.stream().forEach(def -> {
-                                System.out.println(def.getColumnName() + "->" + def.getColDataType() + ", " + def.getColumnSpecStrings());
+                                System.out.println(def.getColumnName() + "->" + def.getColDataType().getArgumentsStringList() + ", " + def.getColumnSpecStrings());
                             });
+                            if (createTable.getIndexes() != null && !createTable.getIndexes().isEmpty()) {
+                                System.out.println(createTable.getIndexes().get(0).getColumnsNames());
+                            }
                             System.out.println("===========================================================");
                         }
                     }

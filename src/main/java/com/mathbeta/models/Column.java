@@ -1,4 +1,4 @@
-package com.mathbeta.models.common;
+package com.mathbeta.models;
 
 /**
  * <h2>Column interface</h2>
@@ -13,6 +13,10 @@ package com.mathbeta.models.common;
  * Created by xiuyou.xu on 2017/7/12.
  */
 public interface Column {
+    public String getName();
+
+    public void setName(String name);
+
     void setDescription(String description);
 
     String getDescription();

@@ -1,6 +1,6 @@
 package com.mathbeta.models.sql;
 
-import com.mathbeta.models.common.Column;
+import com.mathbeta.models.Column;
 
 /**
  * Created by xiuyou.xu on 2017/7/18.

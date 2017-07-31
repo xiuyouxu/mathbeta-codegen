@@ -1,7 +1,5 @@
 package com.mathbeta.models;
 
-import com.mathbeta.models.common.Table;
-
 import java.util.List;
 
 /**

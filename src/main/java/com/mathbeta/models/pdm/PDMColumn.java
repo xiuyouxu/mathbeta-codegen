@@ -1,6 +1,6 @@
 package com.mathbeta.models.pdm;
 
-import com.mathbeta.models.common.Column;
+import com.mathbeta.models.Column;
 
 import javax.xml.bind.annotation.*;
 

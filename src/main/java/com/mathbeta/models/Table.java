@@ -1,4 +1,4 @@
-package com.mathbeta.models.common;
+package com.mathbeta.models;
 
 import java.util.List;
 

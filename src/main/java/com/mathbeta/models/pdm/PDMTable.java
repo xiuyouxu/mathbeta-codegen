@@ -1,6 +1,6 @@
 package com.mathbeta.models.pdm;
 
-import com.mathbeta.models.common.Table;
+import com.mathbeta.models.Table;
 
 import javax.xml.bind.annotation.*;
 import java.util.List;
