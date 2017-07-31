@@ -9,5 +9,10 @@ import java.util.List;
  * Created by xiuyou.xu on 2017/7/12.
  */
 public interface IModel<T extends Table> {
+    /**
+     * 获取模型中所有的表定义，根据表定义生成代码
+     *
+     * @return
+     */
     List<T> getTables();
 }

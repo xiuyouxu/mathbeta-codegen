@@ -24,9 +24,9 @@ import java.util.List;
  */
 public class SqlCodegen extends CodeGeneratorAdapter {
     public static void main(String[] args) {
-        SqlCodegen codegen = new SqlCodegen(new File("D:\\mes-db.sql"), "mes_", "sql-code-gen");
+        SqlCodegen codegen = new SqlCodegen(new File("D:\\mes-db.sql"), "mes_", "sql-code-gen", "com.mes");
         SqlModel model = codegen.read();
-        codegen.generateCode(model, codegen.getInput().getParent() + "/" + codegen.getSubDir(), codegen.getTableNamePrefix());
+        codegen.generateCode(model, codegen.getInput().getParent() + "/" + codegen.getSubDir(), codegen.getTableNamePrefix(), codegen.getBasePackageName());
     }
 
     @Override
@@ -58,14 +58,24 @@ public class SqlCodegen extends CodeGeneratorAdapter {
         this.tableNamePrefix = tableNamePrefix;
     }
 
+    public String getBasePackageName() {
+        return basePackageName;
+    }
+
+    public void setBasePackageName(String basePackageName) {
+        this.basePackageName = basePackageName;
+    }
+
     private File input;
     private String subDir;
     private String tableNamePrefix;
+    private String basePackageName;
 
-    public SqlCodegen(File input, String tableNamePrefix, String subDir) {
+    public SqlCodegen(File input, String tableNamePrefix, String subDir, String basePackageName) {
         this.input = input;
         this.tableNamePrefix = tableNamePrefix;
         this.subDir = subDir;
+        this.basePackageName = basePackageName;
 
         new File(input.getParent(), subDir).mkdirs();
     }

@@ -24,13 +24,15 @@ import java.util.function.Predicate;
  */
 public class PDMCodegen extends CodeGeneratorAdapter {
     public static void main(String[] args) {
-        PDMCodegen codegen = new PDMCodegen(new File("D:\\mes-db.pdm"), "mes_", "pdm-code-gen");
+        PDMCodegen codegen = new PDMCodegen(new File("D:\\mes-db.pdm"), "mes_", "pdm-code-gen", "com.mes");
         PDMModel model = codegen.read();
-        codegen.generateCode(model, codegen.getInput().getParent() + "/" + codegen.getSubDir(), codegen.getTableNamePrefix());
+        codegen.generateCode(model, codegen.getInput().getParent() + "/" + codegen.getSubDir(), codegen.getTableNamePrefix(), codegen.getBasePackageName());
     }
 
     private File input;
+    private String subDir;
     private String tableNamePrefix;
+    private String basePackageName;
 
     public File getInput() {
         return input;
@@ -56,12 +58,19 @@ public class PDMCodegen extends CodeGeneratorAdapter {
         this.subDir = subDir;
     }
 
-    private String subDir;
+    public String getBasePackageName() {
+        return basePackageName;
+    }
 
-    public PDMCodegen(File input, String tableNamePrefix, String subDir) {
+    public void setBasePackageName(String basePackageName) {
+        this.basePackageName = basePackageName;
+    }
+
+    public PDMCodegen(File input, String tableNamePrefix, String subDir, String basePackageName) {
         this.input = input;
         this.tableNamePrefix = tableNamePrefix;
         this.subDir = subDir;
+        this.basePackageName = basePackageName;
 
         new File(input.getParent(), subDir).mkdirs();
     }
