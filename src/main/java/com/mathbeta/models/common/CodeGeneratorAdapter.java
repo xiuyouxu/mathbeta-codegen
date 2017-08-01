@@ -320,7 +320,7 @@ public abstract class CodeGeneratorAdapter implements ICodeGenerator {
                 String entityName = getEntityName(table.getName(), true, tableNamePrefix);
                 if (constantBw != null) {
                     try {
-                        constantBw.append("public final String ").append(entityName.toUpperCase()).append(" = \"").append(entityName.toLowerCase()).append("\";\r\n");
+                        constantBw.append("public static final String ").append(entityName.toUpperCase()).append(" = \"").append(entityName.toLowerCase()).append("\";\r\n");
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
@@ -425,7 +425,7 @@ public abstract class CodeGeneratorAdapter implements ICodeGenerator {
                         bw.append("\t/**\r\n");
                         bw.append("\t * ").append(table.getDescription()).append("\r\n");
                         bw.append("\t*/\r\n");
-                        bw.append("\tpublic I").append(entityName).append("Provider get").append(entityName).append("Provider() {\r\n");
+                        bw.append("\tpublic static I").append(entityName).append("Provider get").append(entityName).append("Provider() {\r\n");
                         bw.append("\t\tI").append(entityName).append("Provider ").append(field).append("Provider = null;\r\n");
                         bw.append("\ttry {\r\n");
                         bw.append("\t\t\t").append(field).append("Provider = (I").append(entityName).append("Provider) ServiceBeanContext.getInstance().getBean(\"").append(field).append("Provider\");\r\n");
