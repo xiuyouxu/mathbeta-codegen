@@ -1,5 +1,6 @@
 package com.mathbeta.models.pdm;
 
+import com.mathbeta.models.IModel;
 import com.mathbeta.models.KeyColumnFilterGenerator;
 import com.mathbeta.models.Table;
 import com.mathbeta.models.common.CodeGeneratorAdapter;
@@ -99,6 +100,15 @@ public class PDMCodegen extends CodeGeneratorAdapter {
             e.printStackTrace();
         }
         return null;
+    }
+
+    public void addCheckName(IModel model) {
+        List<Table> tables = model.getTables();
+        if(tables!=null&&!tables.isEmpty()) {
+            tables.stream().forEach(table -> {
+
+            });
+        }
     }
 
     @Override
