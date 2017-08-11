@@ -1,0 +1,31 @@
+package ${basePackageName}.entity;
+
+import com.mes.common.framework.domain.BeanValidationGroups;
+import com.mes.common.framework.domain.TrackableEntity;
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
+
+import javax.validation.constraints.NotNull;
+#set($entityName="#getEntityName($table.name,true,$tableNamePrefix)")
+/**
+ * $table.description
+ * Created by xiuyou.xu on 2017/7/4.
+ */
+@ApiModel(value = "${entityName}", description = "$table.description")
+public class ${entityName} extends TrackableEntity {
+    #foreach($column in $table.columns)#set($fieldName="#getFieldName($column.name,false,$tableNamePrefix)")
+    @ApiModelProperty(value="$column.description")
+    @NotNull(message = "$column.description", groups = {BeanValidationGroups.CreateGroup.class})
+    private #getJavaType($column.dataType) ${fieldName};
+    #end
+
+    #foreach($column in $table.columns)#set($fieldName="#getFieldName($column.name,false,$tableNamePrefix)")
+    public #getJavaType($column.dataType) get#getEntityName($column.name,false,"") () {
+        return ${fieldName};
+    }
+
+    public void set#getEntityName($column.name,false,"") (#getJavaType($column.dataType) ${fieldName}) {
+        this.${fieldName} = ${fieldName};
+    }
+    #end
+}

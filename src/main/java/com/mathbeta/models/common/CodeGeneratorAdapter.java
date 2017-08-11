@@ -2,11 +2,11 @@ package com.mathbeta.models.common;
 
 import com.mathbeta.models.*;
 import com.mathbeta.models.types.TypeMappingUtil;
+import org.apache.velocity.Template;
+import org.apache.velocity.VelocityContext;
+import org.apache.velocity.app.Velocity;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -19,13 +19,34 @@ import java.util.stream.Collectors;
 public abstract class CodeGeneratorAdapter implements ICodeGenerator {
     @Override
     public void generateCode(IModel model, String parentPath, String tableNamePrefix, String basePackageName) {
-        genEntity(model, parentPath, tableNamePrefix, basePackageName);
-        genRestful(model, parentPath, tableNamePrefix, basePackageName);
-        genDubbo(model, parentPath, tableNamePrefix, basePackageName);
-        genMapper(model, parentPath, tableNamePrefix, basePackageName);
+//        genEntity(model, parentPath, tableNamePrefix, basePackageName);
+//        genRestful(model, parentPath, tableNamePrefix, basePackageName);
+//        genDubbo(model, parentPath, tableNamePrefix, basePackageName);
+//        genMapper(model, parentPath, tableNamePrefix, basePackageName);
+//
+//        genTableDescriptions(model, parentPath);
+//        genTableCreateSql(model, parentPath);
 
-        genTableDescriptions(model, parentPath);
-        genTableCreateSql(model, parentPath);
+        genEntityByTemplate(model, parentPath, tableNamePrefix, basePackageName);
+    }
+
+    private void genEntityByTemplate(IModel model, String parentPath, String tableNamePrefix, String basePackageName) {
+        Velocity.init("src/main/resources/velocity.properties");
+        Template template = Velocity.getTemplate("src/main/resources/templates/entity.vm");
+
+        List<Table> tables = model.getTables();
+        if (tables != null && !tables.isEmpty()) {
+            tables.stream().forEach(table -> {
+                VelocityContext context = new VelocityContext();
+                context.put("table", table);
+                context.put("tableNamePrefix", tableNamePrefix);
+                context.put("basePackageName", basePackageName);
+
+                StringWriter writer = new StringWriter();
+                template.merge(context, writer);
+                System.out.println(writer.toString());
+            });
+        }
     }
 
     /**

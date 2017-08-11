@@ -1,0 +1,15 @@
+<html>
+<head>
+    <meta charset="UTF-8" />
+    <title>Document</title>
+</head>
+<body>
+hello,dear $username
+<br />
+Welcome to our website.Hope you have a great time.
+<br />
+    $companyName
+    $now
+    #getEntityName("mes_user", true, "mes_")
+</body>
+</html>

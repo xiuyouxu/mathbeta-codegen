@@ -1,0 +1,21 @@
+package ${basePackageName}.restful;
+
+import com.mes.common.framework.rest.impl.BaseRestServerInterfaceImpl;
+import com.mes.dubbo.consumer.ControlConsumer;
+import com.mes.utils.RestConstants;
+import io.swagger.annotations.Api;
+
+import javax.ws.rs.Path;
+#set($entityName="#getEntityName($table.name,true,$tableNamePrefix)")
+/**
+ * $table.description
+ * Created by xiuyou.xu on 2017/7/4.
+ */
+@Api(value = "$table.description", description = "$table.description"/*, authorizations = {@Authorization(value = "mesoauth", scopes = {@AuthorizationScope(scope = "dept", description = "$table.description")})}*/)
+@Path(RestConstants.RestPathPrefix.${entityName}.toUpperCase())
+public class ${entityName}RestServer extends BaseRestServerInterfaceImpl<${entityName}> {
+    @Override
+    public I${entityName}Provider getDubboBaseInterface() {
+        return ControlConsumer.get${entityName}Provider();
+    }
+}

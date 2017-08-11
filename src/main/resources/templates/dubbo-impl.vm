@@ -1,0 +1,29 @@
+package ${basePackageName}.provider;
+
+import com.alibaba.fastjson.JSON;
+import com.google.common.collect.Maps;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+
+import java.util.List;
+import java.util.Map;
+#set($entityName="#getEntityName($table.name,true,$tableNamePrefix)")
+#set($fieldName="#getFieldName($table.name,true,$tableNamePrefix)")
+/**
+ * $table.description
+ * Created by xiuyou.xu on 2017/7/4.
+ */
+public class ${entityName}ProviderImpl extends BaseProviderImpl<${entityName}> implements I${entityName}Provider {
+    private static Logger logger = LoggerFactory.getLogger(${entityName}ProviderImpl.class);
+
+    @Autowired
+    @Qualifier("")
+    private ${entityName}Mapper ${fieldName}Mapper;
+
+    @Override
+    public ${entityName}Mapper getBaseInterfaceMapper() {
+        return ${fieldName}Mapper;
+    }
+}

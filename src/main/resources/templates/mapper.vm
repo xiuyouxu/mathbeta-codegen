@@ -1,0 +1,14 @@
+package ${basePackageName}.mapper;
+
+import com.mes.common.framework.mapper.BaseInterfaceMapper;
+
+import java.util.List;
+import java.util.Map;
+#set($entityName="#getEntityName($table.name,true,$tableNamePrefix)")
+/**
+ * $table.description
+ * Created by xiuyou.xu on 2017/7/4.
+ */
+public interface ${entityName}Mapper extends BaseInterfaceMapper<${entityName}> {
+
+}
