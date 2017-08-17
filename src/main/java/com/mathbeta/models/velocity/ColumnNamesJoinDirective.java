@@ -1,6 +1,6 @@
 package com.mathbeta.models.velocity;
 
-import com.mathbeta.models.utils.NameUtil;
+import com.mathbeta.models.Column;
 import org.apache.velocity.context.InternalContextAdapter;
 import org.apache.velocity.exception.MethodInvocationException;
 import org.apache.velocity.exception.ParseErrorException;
@@ -11,16 +11,16 @@ import org.apache.velocity.runtime.parser.node.Node;
 
 import java.io.IOException;
 import java.io.Writer;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
- * 字段名到类属性名转换指令
- *
- * Created by xiuyou.xu on 2017/8/11.
+ * Created by xiuyou.xu on 2017/8/16.
  */
-public class FieldNameDirective extends Directive {
+public class ColumnNamesJoinDirective extends Directive {
     @Override
     public String getName() {
-        return "getFieldName";
+        return "joinColumns";
     }
 
     @Override
@@ -30,13 +30,18 @@ public class FieldNameDirective extends Directive {
 
     @Override
     public boolean render(InternalContextAdapter internalContextAdapter, Writer writer, Node node) throws IOException, ResourceNotFoundException, ParseErrorException, MethodInvocationException {
-        Node nameNode = node.jjtGetChild(0);
-        String name = (String) nameNode.value(internalContextAdapter);
-        Node hasPrefixNode = node.jjtGetChild(1);
-        boolean hasPrefix = (boolean) hasPrefixNode.value(internalContextAdapter);
-        Node tableNamePrefixNode = node.jjtGetChild(2);
-        String tableNamePrefix = (String) tableNamePrefixNode.value(internalContextAdapter);
-        writer.write(NameUtil.getFieldName(name, hasPrefix, tableNamePrefix));
-        return false;
+        Node columnsNode = node.jjtGetChild(0);
+        List<Column> columns = (List<Column>) columnsNode.value(internalContextAdapter);
+        if (columns == null) {
+            return false;
+        }
+        Node prefixNode = node.jjtGetChild(1);
+        String prefix = (String) prefixNode.value(internalContextAdapter);
+        Node suffixNode = node.jjtGetChild(1);
+        String suffix = (String) suffixNode.value(internalContextAdapter);
+        writer.write(String.join(",", columns.stream().map(column -> {
+            return prefix + column.getName() + suffix;
+        }).collect(Collectors.toList())));
+        return true;
     }
 }

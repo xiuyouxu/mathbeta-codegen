@@ -1,0 +1,160 @@
+#set($entityName="#getEntityName($table.name,true,$tableNamePrefix)")
+#set($fieldName="#getFieldName($table.name,true,$tableNamePrefix)")
+#set($fieldLeft='#{')
+#set($fieldRight='}')
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mes.control.mapper.${entityName}Mapper}">
+
+
+    <resultMap type="com.mes.entity.control.$entityName" id="${fieldName}ResultMap">
+        #foreach($column in $table.columns)
+        <result column="$column.name" property="#getFieldName($column.name,false,"""")" jdbcType="#getJdbcType($column.dataType)"/>
+        #end
+    </resultMap>
+
+
+    <!--根据id查询-->
+    <select id="findById"  resultMap="${fieldName}ResultMap">
+        <include refid="sql_select"/>
+        where s.id = ${fieldLeft}id${fieldRight}
+    </select>
+
+    <!--新增操作 -->
+    <insert id="save" parameterType="com.mes.entity.control.$entityName">
+        insert into $table.name
+        (#joinColumns($table.columns,"`","`"))
+        values
+        (#joinFields($table.columns,"$fieldLeft","${fieldRight}"))
+    </insert>
+
+    <!--更新操作-->
+    <update id="update" parameterType="com.mes.entity.control.$entityName">
+        update $table.name s
+        <include refid="sql_update"/>
+        where s.id = ${fieldLeft}id${fieldRight}
+    </update>
+
+    <!--根据id删除-->
+    <delete id="deleteById" parameterType="java.lang.String">
+        delete from $table.name where id =${fieldLeft}id${fieldRight}
+    </delete>
+
+    <!--获取数据条数-->
+    <select id="getCount" parameterType="java.util.Map" resultType="int">
+        select count(1) from $table.name t
+        <include refid="sql_where_and_equal"/>
+    </select>
+
+    <select id="findByPage"  parameterType="java.util.Map" resultMap="${fieldName}ResultMap">
+        <include refid="sql_select"/>
+        <include refid="sql_where_and_equal"/>
+        order by s.create_date desc
+        limit ${fieldLeft}startRowNum${fieldRight},${fieldLeft}pageSize${fieldRight}
+    </select>
+
+
+    <!--根据条件查询-->
+    <select id="findByMap"  parameterType="java.util.Map" resultMap="${fieldName}ResultMap">
+        <include refid="sql_select"/>
+        <include refid="sql_where_and_equal"/>
+        order by s.create_date desc
+    </select>
+    <!--查询所有-->
+    <select id="findAll"  resultMap="${fieldName}ResultMap">
+        <include refid="sql_select"/>
+        <include refid="sql_where_and_equal"/>
+        order by s.create_date desc
+    </select>
+    <!--查询字段-->
+    <sql id="sql_select">
+        SELECT #joinColumns($table.columns,"`","`") from $table.name  s
+    </sql>
+
+    #set($columnsLike="#joinColumnsLike($table.columns, ""CONCAT('%', ${fieldLeft}_search${fieldRight}, '%')"",""`"",""`"")")
+    <!--查询条件-->
+    <sql id="sql_where_and_equal">
+        <where>
+            <if test="_search != null and _search != '' ">
+                and (
+                $columnsLike
+                )
+            </if>
+            #foreach($column in $table.columns)#set($fieldName="#getFieldName($column.name,false,"""")")
+            <if test="$fieldName != null  and $fieldName != '' ">
+            <![CDATA[
+            and `$column.name` = ${fieldLeft}$fieldName${fieldRight}
+            ]]>
+            </if>
+            #end
+        </where>
+    </sql>
+
+    <!--查询条件-->
+    <sql id="sql_where_or_equal">
+        <where>
+            <if test="_search != null and _search != '' ">
+                and (
+                $columnsLike
+                )
+            </if>
+            #foreach($column in $table.columns)#set($fieldName="#getFieldName($column.name,false,"""")")
+                <if test="$fieldName != null  and $fieldName != '' ">
+                <![CDATA[
+                or `$column.name` = ${fieldLeft}$fieldName${fieldRight}
+                ]]>
+                </if>
+            #end
+        </where>
+    </sql>
+
+    <!--查询条件-->
+    <sql id="sql_where_and_like">
+        <where>
+            <if test="_search != null and _search != '' ">
+                and (
+                $columnsLike
+                )
+            </if>
+            #foreach($column in $table.columns)#set($fieldName="#getFieldName($column.name,false,"""")")
+                <if test="$fieldName != null  and $fieldName != '' ">
+                <![CDATA[
+                and `$column.name` CONCAT('%', ${fieldLeft}$fieldName${fieldRight}, '%')
+                ]]>
+                </if>
+            #end
+        </where>
+    </sql>
+
+    <!--查询条件-->
+    <sql id="sql_where_or_like">
+        <where>
+            <if test="_search != null and _search != '' ">
+                and (
+                $columnsLike
+                )
+            </if>
+            #foreach($column in $table.columns)#set($fieldName="#getFieldName($column.name,false,"""")")
+                <if test="$fieldName != null  and $fieldName != '' ">
+                <![CDATA[
+                or `$column.name` CONCAT('%', ${fieldLeft}$fieldName${fieldRight}, '%')
+                ]]>
+                </if>
+            #end
+        </where>
+    </sql>
+
+    <!--更新操作-->
+    <sql id="sql_update">
+        <set>
+            #foreach($column in $table.columns)#set($fieldName="#getFieldName($column.name,false,"""")")
+                <if test="$fieldName != null  and $fieldName != '' ">
+                    <![CDATA[
+                    `$column.name` = ${fieldLeft}$fieldName${fieldRight},
+                    ]]>
+                </if>
+            #end
+        </set>
+    </sql>
+</mapper>

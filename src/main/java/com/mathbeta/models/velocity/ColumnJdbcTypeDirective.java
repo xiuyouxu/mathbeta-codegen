@@ -1,6 +1,5 @@
 package com.mathbeta.models.velocity;
 
-import com.mathbeta.models.types.TypeMappingUtil;
 import org.apache.velocity.context.InternalContextAdapter;
 import org.apache.velocity.exception.MethodInvocationException;
 import org.apache.velocity.exception.ParseErrorException;
@@ -11,19 +10,16 @@ import org.apache.velocity.runtime.parser.node.Node;
 
 import java.io.IOException;
 import java.io.Writer;
-import java.util.Map;
 
 /**
- * 字段数据类型到java类型转换指令
+ * 字段数据类型到mybatis jdbc type转换指令
  *
- * Created by xiuyou.xu on 2017/8/11.
+ * Created by xiuyou.xu on 2017/8/16.
  */
-public class ColumnJavaTypeDirective extends Directive {
-    private static Map<String, String> mapping = TypeMappingUtil.getMapping().get("mysql");
-
+public class ColumnJdbcTypeDirective extends Directive {
     @Override
     public String getName() {
-        return "getJavaType";
+        return "getJdbcType";
     }
 
     @Override
@@ -36,11 +32,21 @@ public class ColumnJavaTypeDirective extends Directive {
         Node dataTypeNode = node.jjtGetChild(0);
         String type = (String) dataTypeNode.value(internalContextAdapter);
         if (type != null) {
-            if (type.contains("(")) {
-                type = type.substring(0, type.indexOf("("));
+            if (type != null) {
+                if (type != null && type.contains("(")) {
+                    type = type.substring(0, type.indexOf("("));
+                }
+                if ("date".equalsIgnoreCase(type) || "datetime".equalsIgnoreCase(type)) {
+                    type = "TIMESTAMP";
+                }
+                if ("int".equalsIgnoreCase(type)) {
+                    type = "INTEGER";
+                }
+                if ("varchar".equalsIgnoreCase(type) || type.toLowerCase().contains("text")) {
+                    type = "VARCHAR";
+                }
+                writer.write(type);
             }
-            String javaType = mapping.get(type);
-            writer.write(javaType == null ? "" : javaType);
         }
         return true;
     }

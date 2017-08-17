@@ -11,8 +11,8 @@ import javax.ws.rs.Path;
  * $table.description
  * Created by xiuyou.xu on 2017/7/4.
  */
-@Api(value = "$table.description", description = "$table.description"/*, authorizations = {@Authorization(value = "mesoauth", scopes = {@AuthorizationScope(scope = "dept", description = "$table.description")})}*/)
-@Path(RestConstants.RestPathPrefix.${entityName}.toUpperCase())
+@Api(value = "$table.description", description = "$table.description"/*, authorizations = {@Authorization(value = "mesoauth", scopes = {@AuthorizationScope(scope = "$entityName.toLowerCase()", description = "$table.description")})}*/)
+@Path(RestConstants.RestPathPrefix.$entityName.toUpperCase())
 public class ${entityName}RestServer extends BaseRestServerInterfaceImpl<${entityName}> {
     @Override
     public I${entityName}Provider getDubboBaseInterface() {

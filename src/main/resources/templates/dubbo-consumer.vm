@@ -1,0 +1,17 @@
+#foreach($table in $tables)
+    #set($entityName="#getEntityName($table.name,true,$tableNamePrefix)")
+    #set($fieldName="#getFieldName($table.name,true,$tableNamePrefix)")
+/**
+* $table.description
+*/
+public static I${entityName}Provider get${entityName}Provider() {
+    I${entityName}Provider ${fieldName}Provider = null;
+    try {
+        ${fieldName}Provider = (I${entityName}Provider) ServiceBeanContext.getInstance().getBean("${fieldName}Provider");
+    } catch (Exception e) {
+        log.error("获取 get${entityName}Provider ServiceBean 失败！  ", e);
+    }
+    return ${fieldName}Provider;
+}
+
+#end

@@ -12,14 +12,14 @@
         <mapping jdbc="mediumtext" java="String"/>
         <mapping jdbc="longblob" java="String"/>
         <mapping jdbc="longtext" java="String"/>
-        <mapping jdbc="tinyint" java="int"/>
-        <mapping jdbc="smallint" java="int"/>
-        <mapping jdbc="mediumint" java="int"/>
-        <mapping jdbc="int" java="int"/>
-        <mapping jdbc="bigint" java="long"/>
-        <mapping jdbc="float" java="float"/>
-        <mapping jdbc="double" java="double"/>
-        <mapping jdbc="decimal" java="double"/>
+        <mapping jdbc="tinyint" java="Integer"/>
+        <mapping jdbc="smallint" java="Integer"/>
+        <mapping jdbc="mediumint" java="Integer"/>
+        <mapping jdbc="int" java="Integer"/>
+        <mapping jdbc="bigint" java="Long"/>
+        <mapping jdbc="float" java="Float"/>
+        <mapping jdbc="double" java="Double"/>
+        <mapping jdbc="decimal" java="Double"/>
         <mapping jdbc="date" java="Date"/>
         <mapping jdbc="time" java="Date"/>
         <mapping jdbc="year" java="Date"/>

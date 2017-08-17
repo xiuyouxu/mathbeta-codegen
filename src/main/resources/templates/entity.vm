@@ -6,25 +6,28 @@ import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 
 import javax.validation.constraints.NotNull;
+import javax.xml.bind.annotation.XmlAccessType;
+import javax.xml.bind.annotation.XmlAccessorType;
 #set($entityName="#getEntityName($table.name,true,$tableNamePrefix)")
 /**
  * $table.description
  * Created by xiuyou.xu on 2017/7/4.
  */
 @ApiModel(value = "${entityName}", description = "$table.description")
+@XmlAccessorType(XmlAccessType.FIELD)
 public class ${entityName} extends TrackableEntity {
-    #foreach($column in $table.columns)#set($fieldName="#getFieldName($column.name,false,$tableNamePrefix)")
+    #foreach($column in $table.columns)#set($fieldName="#getFieldName($column.name,false,"""")")
     @ApiModelProperty(value="$column.description")
     @NotNull(message = "$column.description", groups = {BeanValidationGroups.CreateGroup.class})
     private #getJavaType($column.dataType) ${fieldName};
     #end
 
-    #foreach($column in $table.columns)#set($fieldName="#getFieldName($column.name,false,$tableNamePrefix)")
-    public #getJavaType($column.dataType) get#getEntityName($column.name,false,"") () {
+    #foreach($column in $table.columns)#set($fieldName="#getFieldName($column.name,false,"""")")#set($javaType="#getJavaType($column.dataType)")
+    public ${javaType} get#getEntityName($column.name,false,"") () {
         return ${fieldName};
     }
 
-    public void set#getEntityName($column.name,false,"") (#getJavaType($column.dataType) ${fieldName}) {
+    public void set#getEntityName($column.name,false,"") (${javaType} ${fieldName}) {
         this.${fieldName} = ${fieldName};
     }
     #end

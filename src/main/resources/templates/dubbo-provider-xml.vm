@@ -1,0 +1,8 @@
+#foreach($table in $tables)
+    #set($entityName="#getEntityName($table.name,true,$tableNamePrefix)")
+    #set($fieldName="#getFieldName($table.name,true,$tableNamePrefix)")
+<!-- $table.description -->
+<bean id="${fieldName}Provider" class="com.mes.control.provider.${entityName}ProviderImpl"/>
+<dubbo:service interface="com.mes.dubbo.interprovider.control.I${entityName}Provider" ref="${fieldName}Provider" retries="0" protocol="dubbo"/>
+
+#end

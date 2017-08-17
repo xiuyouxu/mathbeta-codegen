@@ -1,0 +1,7 @@
+#foreach($table in $tables)
+    #set($entityName="#getEntityName($table.name,true,$tableNamePrefix)")
+    #set($fieldName="#getFieldName($table.name,true,$tableNamePrefix)")
+<!-- $table.description -->
+<dubbo:reference id="${fieldName}Provider" interface="com.mes.dubbo.interprovider.control.I${entityName}Provider" timeout="20000"/>
+
+#end

@@ -2,11 +2,15 @@ package com.mathbeta.models.common;
 
 import com.mathbeta.models.*;
 import com.mathbeta.models.types.TypeMappingUtil;
+import com.mathbeta.models.utils.NameUtil;
 import org.apache.velocity.Template;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.Velocity;
 
-import java.io.*;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -28,6 +32,9 @@ public abstract class CodeGeneratorAdapter implements ICodeGenerator {
 //        genTableCreateSql(model, parentPath);
 
         genEntityByTemplate(model, parentPath, tableNamePrefix, basePackageName);
+        genRestfulByTemplate(model, parentPath, tableNamePrefix, basePackageName);
+        genDubboByTemplate(model, parentPath, tableNamePrefix, basePackageName);
+        genMapperByTemplate(model, parentPath, tableNamePrefix, basePackageName);
     }
 
     private void genEntityByTemplate(IModel model, String parentPath, String tableNamePrefix, String basePackageName) {
@@ -36,15 +43,174 @@ public abstract class CodeGeneratorAdapter implements ICodeGenerator {
 
         List<Table> tables = model.getTables();
         if (tables != null && !tables.isEmpty()) {
+            new File(parentPath + "/entity").mkdirs();
             tables.stream().forEach(table -> {
                 VelocityContext context = new VelocityContext();
                 context.put("table", table);
                 context.put("tableNamePrefix", tableNamePrefix);
                 context.put("basePackageName", basePackageName);
 
-                StringWriter writer = new StringWriter();
-                template.merge(context, writer);
-                System.out.println(writer.toString());
+                try {
+                    FileWriter writer = new FileWriter(parentPath + "/entity/" + NameUtil.getEntityName(table.getName(), true, tableNamePrefix) + ".java");
+                    if (writer != null) {
+                        template.merge(context, writer);
+                        writer.close();
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            });
+        }
+    }
+
+    private void genRestfulByTemplate(IModel model, String parentPath, String tableNamePrefix, String basePackageName) {
+        Velocity.init("src/main/resources/velocity.properties");
+        Template template = Velocity.getTemplate("src/main/resources/templates/restful.vm");
+        Template pathTemplate = Velocity.getTemplate("src/main/resources/templates/restful-path.vm");
+
+        List<Table> tables = model.getTables();
+        if (tables != null && !tables.isEmpty()) {
+            new File(parentPath + "/restful").mkdirs();
+            tables.stream().forEach(table -> {
+                VelocityContext context = new VelocityContext();
+                context.put("table", table);
+                context.put("tableNamePrefix", tableNamePrefix);
+                context.put("basePackageName", basePackageName);
+
+                try {
+                    FileWriter writer = new FileWriter(parentPath + "/restful/" + NameUtil.getEntityName(table.getName(), true, tableNamePrefix) + "RestServer.java");
+                    if (writer != null) {
+                        template.merge(context, writer);
+                        writer.close();
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            });
+
+            // generate restful resource path constants
+            VelocityContext context = new VelocityContext();
+            context.put("tables", tables);
+            context.put("tableNamePrefix", tableNamePrefix);
+            context.put("basePackageName", basePackageName);
+            try {
+                FileWriter writer = new FileWriter(parentPath + "/restful/__RestPath.java");
+                if (writer != null) {
+                    pathTemplate.merge(context, writer);
+                    writer.close();
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    protected void genDubboByTemplate(IModel model, String parentPath, String tableNamePrefix, String basePackageName) {
+        Velocity.init("src/main/resources/velocity.properties");
+        Template dubboInterfaceTemplate = Velocity.getTemplate("src/main/resources/templates/dubbo-interface.vm");
+        Template dubboImplTemplate = Velocity.getTemplate("src/main/resources/templates/dubbo-impl.vm");
+        Template consumerTemplate = Velocity.getTemplate("src/main/resources/templates/dubbo-consumer.vm");
+        Template consumerXmlTemplate = Velocity.getTemplate("src/main/resources/templates/dubbo-consumer-xml.vm");
+        Template providerXmlTemplate = Velocity.getTemplate("src/main/resources/templates/dubbo-provider-xml.vm");
+
+        List<Table> tables = model.getTables();
+        if (tables != null && !tables.isEmpty()) {
+            new File(parentPath + "/dubbo/impl").mkdirs();
+            tables.stream().forEach(table -> {
+                VelocityContext context = new VelocityContext();
+                context.put("table", table);
+                context.put("tableNamePrefix", tableNamePrefix);
+                context.put("basePackageName", basePackageName);
+
+                try {
+                    FileWriter writer = new FileWriter(parentPath + "/dubbo/I" + NameUtil.getEntityName(table.getName(), true, tableNamePrefix) + "Provider.java");
+                    if (writer != null) {
+                        dubboInterfaceTemplate.merge(context, writer);
+                        writer.close();
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+
+                try {
+                    FileWriter writer = new FileWriter(parentPath + "/dubbo/impl/" + NameUtil.getEntityName(table.getName(), true, tableNamePrefix) + "ProviderImpl.java");
+                    if (writer != null) {
+                        dubboImplTemplate.merge(context, writer);
+                        writer.close();
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            });
+
+            // generate dubbo consumer xml and provider xml and consumer getter method
+            VelocityContext context = new VelocityContext();
+            context.put("tables", tables);
+            context.put("tableNamePrefix", tableNamePrefix);
+            context.put("basePackageName", basePackageName);
+            try {
+                FileWriter writer = new FileWriter(parentPath + "/dubbo/__Consumer.java");
+                if (writer != null) {
+                    consumerTemplate.merge(context, writer);
+                    writer.close();
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            try {
+                FileWriter writer = new FileWriter(parentPath + "/dubbo/__consumer.xml");
+                if (writer != null) {
+                    consumerXmlTemplate.merge(context, writer);
+                    writer.close();
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            try {
+                FileWriter writer = new FileWriter(parentPath + "/dubbo/__provider.xml");
+                if (writer != null) {
+                    providerXmlTemplate.merge(context, writer);
+                    writer.close();
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private void genMapperByTemplate(IModel model, String parentPath, String tableNamePrefix, String basePackageName) {
+        Velocity.init("src/main/resources/velocity.properties");
+        Template mapperTemplate = Velocity.getTemplate("src/main/resources/templates/mapper.vm");
+        Template mapperXmlTemplate = Velocity.getTemplate("src/main/resources/templates/mapper-xml.vm");
+
+        List<Table> tables = model.getTables();
+        if (tables != null && !tables.isEmpty()) {
+            new File(parentPath + "/mapper/xml").mkdirs();
+            tables.stream().forEach(table -> {
+                VelocityContext context = new VelocityContext();
+                context.put("table", table);
+                context.put("tableNamePrefix", tableNamePrefix);
+                context.put("basePackageName", basePackageName);
+
+                try {
+                    FileWriter writer = new FileWriter(parentPath + "/mapper/" + NameUtil.getEntityName(table.getName(), true, tableNamePrefix) + "Mapper.java");
+                    if (writer != null) {
+                        mapperTemplate.merge(context, writer);
+                        writer.close();
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+
+                try {
+                    FileWriter writer = new FileWriter(parentPath + "/mapper/xml/" + NameUtil.getEntityName(table.getName(), true, tableNamePrefix) + "Mapper.xml");
+                    if (writer != null) {
+                        mapperXmlTemplate.merge(context, writer);
+                        writer.close();
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             });
         }
     }
@@ -585,7 +751,7 @@ public abstract class CodeGeneratorAdapter implements ICodeGenerator {
                     bw.append("\t\tinsert into ").append(table.getName()).append(" (");
                     if (columns != null && !columns.isEmpty()) {
                         bw.append(String.join(",", columns.stream().map(column -> {
-                            return column.getName();
+                            return "`" + column.getName() + "`";
                         }).collect(Collectors.toList())));
                     }
                     bw.append(")\r\n\t\tvalues (");
@@ -626,7 +792,7 @@ public abstract class CodeGeneratorAdapter implements ICodeGenerator {
                     bw.append("\t\tSELECT ");
                     if (columns != null && !columns.isEmpty()) {
                         bw.append(String.join(",", columns.stream().map(column -> {
-                            return column.getName();
+                            return "`" + column.getName() + "`";
                         }).collect(Collectors.toList())));
                     }
                     bw.append(" from ").append(table.getName()).append(" s\r\n");
@@ -639,7 +805,7 @@ public abstract class CodeGeneratorAdapter implements ICodeGenerator {
                         bw.append("\t\t\t<if test=\"search != null and search != '' \">\r\n");
                         bw.append("\t\t\t\tand (\r\n");
                         List<String> likes = columns.stream().filter(filter).map(column -> {
-                            return column.getName() + " like CONCAT('%', #{search}, '%')";
+                            return "`" + column.getName() + "`" + " like CONCAT('%', #{search}, '%')";
                         }).collect(Collectors.toList());
                         bw.append("\t\t\t\t").append(String.join("\r\n\t\t\t\tor ", likes));
                         bw.append("\r\n\t\t\t\t)\r\n\t\t\t</if>\r\n");
@@ -650,7 +816,7 @@ public abstract class CodeGeneratorAdapter implements ICodeGenerator {
                                 bw.append("\t\t\t<if test=\"").append(fieldName).append(" != null  and ").append(fieldName).append(" != '' \">\r\n");
                                 bw.append("\t\t\t\t<![CDATA[\r\n");
 //                                bw.append("\t\t\t\t\tand ").append(column.getDescription()).append(" LIKE CONCAT('%', #{").append(fieldName).append("}, '%')\r\n");
-                                bw.append("\t\t\t\t\tand ").append(column.getName()).append(" = #{").append(fieldName).append("}\r\n");
+                                bw.append("\t\t\t\t\tand ").append("`" + column.getName() + "`").append(" = #{").append(fieldName).append("}\r\n");
                                 bw.append("\t\t\t\t]]>\r\n");
                                 bw.append("\t\t\t</if>\r\n");
                             } catch (IOException e) {
@@ -670,7 +836,7 @@ public abstract class CodeGeneratorAdapter implements ICodeGenerator {
                                 bw.append("\t\t\t<if test=\"").append(fieldName).append(" != null  and ").append(fieldName).append(" != '' \">\r\n");
                                 bw.append("\t\t\t\t<![CDATA[\r\n");
 //                                bw.append("\t\t\t\t\tand ").append(column.getDescription()).append(" LIKE CONCAT('%', #{").append(fieldName).append("}, '%')\r\n");
-                                bw.append("\t\t\t\t\tor ").append(column.getName()).append(" = #{").append(fieldName).append("}\r\n");
+                                bw.append("\t\t\t\t\tor ").append("`" + column.getName() + "`").append(" = #{").append(fieldName).append("}\r\n");
                                 bw.append("\t\t\t\t]]>\r\n");
                                 bw.append("\t\t\t</if>\r\n");
                             } catch (IOException e) {
@@ -690,7 +856,7 @@ public abstract class CodeGeneratorAdapter implements ICodeGenerator {
                                 bw.append("\t\t\t<if test=\"").append(fieldName).append(" != null  and ").append(fieldName).append(" != '' \">\r\n");
                                 bw.append("\t\t\t\t<![CDATA[\r\n");
 //                                bw.append("\t\t\t\t\tand ").append(column.getDescription()).append(" LIKE CONCAT('%', #{").append(fieldName).append("}, '%')\r\n");
-                                bw.append("\t\t\t\t\tand ").append(column.getName()).append(" like CONCAT('%', #{").append(fieldName).append("}, '%')\r\n");
+                                bw.append("\t\t\t\t\tand ").append("`" + column.getName() + "`").append(" like CONCAT('%', #{").append(fieldName).append("}, '%')\r\n");
                                 bw.append("\t\t\t\t]]>\r\n");
                                 bw.append("\t\t\t</if>\r\n");
                             } catch (IOException e) {
@@ -710,7 +876,7 @@ public abstract class CodeGeneratorAdapter implements ICodeGenerator {
                                 bw.append("\t\t\t<if test=\"").append(fieldName).append(" != null  and ").append(fieldName).append(" != '' \">\r\n");
                                 bw.append("\t\t\t\t<![CDATA[\r\n");
 //                                bw.append("\t\t\t\t\tand ").append(column.getDescription()).append(" LIKE CONCAT('%', #{").append(fieldName).append("}, '%')\r\n");
-                                bw.append("\t\t\t\t\tor ").append(column.getName()).append(" like CONCAT('%', #{").append(fieldName).append("}, '%')\r\n");
+                                bw.append("\t\t\t\t\tor ").append("`" + column.getName() + "`").append(" like CONCAT('%', #{").append(fieldName).append("}, '%')\r\n");
                                 bw.append("\t\t\t\t]]>\r\n");
                                 bw.append("\t\t\t</if>\r\n");
                             } catch (IOException e) {
@@ -729,7 +895,7 @@ public abstract class CodeGeneratorAdapter implements ICodeGenerator {
                                 String fieldName = getFieldName(column.getName(), false, tableNamePrefix);
                                 bw.append("\t\t\t<if test=\"").append(fieldName).append(" != null  and ").append(fieldName).append(" != '' \">\r\n");
                                 bw.append("\t\t\t\t<![CDATA[\r\n");
-                                bw.append("\t\t\t\t\t").append(column.getName()).append(" = #{").append(fieldName).append("},\r\n");
+                                bw.append("\t\t\t\t\t").append("`" + column.getName() + "`").append(" = #{").append(fieldName).append("},\r\n");
                                 bw.append("\t\t\t\t]]>\r\n");
                                 bw.append("\t\t\t</if>\r\n");
                             } catch (IOException e) {

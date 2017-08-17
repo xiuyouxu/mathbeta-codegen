@@ -1,5 +1,6 @@
 package com.mathbeta.models.velocity;
 
+import com.mathbeta.models.utils.NameUtil;
 import org.apache.velocity.context.InternalContextAdapter;
 import org.apache.velocity.exception.MethodInvocationException;
 import org.apache.velocity.exception.ParseErrorException;
@@ -12,6 +13,8 @@ import java.io.IOException;
 import java.io.Writer;
 
 /**
+ * 表名到类名转换指令
+ *
  * Created by xiuyou.xu on 2017/8/11.
  */
 public class EntityNameDirective extends Directive {
@@ -33,25 +36,7 @@ public class EntityNameDirective extends Directive {
         boolean hasPrefix = (boolean) hasPrefixNode.value(internalContextAdapter);
         Node tableNamePrefixNode = node.jjtGetChild(2);
         String tableNamePrefix = (String) tableNamePrefixNode.value(internalContextAdapter);
-        writer.write(getEntityName(name, hasPrefix, tableNamePrefix));
+        writer.write(NameUtil.getEntityName(name, hasPrefix, tableNamePrefix));
         return false;
-    }
-
-    private String getEntityName(String name, boolean hasPrefix, String tableNamePrefix) {
-        if (hasPrefix && name.startsWith(tableNamePrefix)) {
-            name = name.substring(tableNamePrefix.length());
-        }
-        String[] names = name.split("_");
-        StringBuilder sb = new StringBuilder();
-        if (names != null && names.length > 0) {
-            for (int i = 0; i < names.length; i++) {
-                sb.append(camel(names[i]));
-            }
-        }
-        return sb.toString();
-    }
-
-    private String camel(String name) {
-        return String.valueOf(name.charAt(0)).toUpperCase() + name.substring(1);
     }
 }

@@ -1,0 +1,4 @@
+#foreach($table in $tables)
+#set($entityName="#getEntityName($table.name,true,$tableNamePrefix)")
+public static final String $entityName.toUpperCase() = "$entityName.toLowerCase()";
+#end

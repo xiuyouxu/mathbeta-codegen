@@ -19,7 +19,7 @@ public class ${entityName}ProviderImpl extends BaseProviderImpl<${entityName}> i
     private static Logger logger = LoggerFactory.getLogger(${entityName}ProviderImpl.class);
 
     @Autowired
-    @Qualifier("")
+    @Qualifier("${fieldName}Mapper")
     private ${entityName}Mapper ${fieldName}Mapper;
 
     @Override
