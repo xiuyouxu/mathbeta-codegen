@@ -5,7 +5,7 @@ import java.util.function.Predicate;
 /**
  * Created by xiuyou.xu on 2017/7/31.
  */
-public interface KeyColumnFilterGenerator<T extends Column, U extends Key> {
+public interface ColumnFilterGenerator<T extends Column, U extends Key> {
     /**
      * 创建非主键字段过滤器谓词
      *
@@ -21,4 +21,11 @@ public interface KeyColumnFilterGenerator<T extends Column, U extends Key> {
      * @return
      */
     Predicate<U> determineColumnIsKeyFilter(T column);
+
+    /**
+     * 创建实体类属性字段过滤器谓词
+     *
+     * @return
+     */
+    Predicate<T> generateEntityFieldsFilter();
 }

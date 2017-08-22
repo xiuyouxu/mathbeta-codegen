@@ -13,7 +13,7 @@ import java.util.Map;
 #set($fieldName="#getFieldName($table.name,true,$tableNamePrefix)")
 /**
  * $table.description
- * Created by xiuyou.xu on 2017/7/4.
+ * Created by xiuyou.xu on #getCurrentDate().
  */
 public class ${entityName}ProviderImpl extends BaseProviderImpl<${entityName}> implements I${entityName}Provider {
     private static Logger logger = LoggerFactory.getLogger(${entityName}ProviderImpl.class);

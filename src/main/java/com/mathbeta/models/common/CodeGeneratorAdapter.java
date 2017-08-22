@@ -220,27 +220,23 @@ public abstract class CodeGeneratorAdapter implements ICodeGenerator {
      *
      * @return
      */
-    public abstract KeyColumnFilterGenerator getKeyColumnFilterGenerator();
+    public abstract ColumnFilterGenerator getColumnFilterGenerator();
 
-    private KeyColumnFilterGenerator getAvailKeyColumnFilterGenerator() {
-        KeyColumnFilterGenerator generator = getKeyColumnFilterGenerator();
+    private ColumnFilterGenerator getAvailKeyColumnFilterGenerator() {
+        ColumnFilterGenerator generator = getColumnFilterGenerator();
         if (generator == null) {
             generator = defaultKeyColumnFilterGenerator;
         }
         return generator;
     }
 
-    private KeyColumnFilterGenerator defaultKeyColumnFilterGenerator = new KeyColumnFilterGenerator() {
+    private ColumnFilterGenerator defaultKeyColumnFilterGenerator = new ColumnFilterGenerator() {
         @Override
         public Predicate<Column> generateNonKeyColumnFilter(Table table) {
             return column -> {
                 // 过滤掉主键
                 if (table.getKeys() != null) {
-                    return ((List<Key>) table.getKeys()).stream().noneMatch(key -> {
-                        return ((List<Column>) key.getColumns()).stream().anyMatch(k -> {
-                            return column.getName().equals(k.getName());
-                        });
-                    });
+                    return ((List<Key>) table.getKeys()).stream().noneMatch(key -> ((List<Column>) key.getColumns()).stream().anyMatch(k -> column.getName().equals(k.getName())));
                 }
                 return true;
             };
@@ -250,11 +246,20 @@ public abstract class CodeGeneratorAdapter implements ICodeGenerator {
         public Predicate<Key> determineColumnIsKeyFilter(Column column) {
             return key -> {
                 if (key.getColumns() != null) {
-                    return ((List<Column>) key.getColumns()).stream().anyMatch(c -> {
-                        return c.getName().equals(column.getName());
-                    });
+                    return ((List<Column>) key.getColumns()).stream().anyMatch(c -> c.getName().equals(column.getName()));
                 }
                 return false;
+            };
+        }
+
+        @Override
+        public Predicate<Column> generateEntityFieldsFilter() {
+            return column -> {
+                String name = column.getName();
+                if ("id".equalsIgnoreCase(name) || "create_date".equalsIgnoreCase(name) || "update_date".equalsIgnoreCase(name)) {
+                    return false;
+                }
+                return true;
             };
         }
     };
@@ -382,8 +387,9 @@ public abstract class CodeGeneratorAdapter implements ICodeGenerator {
 
         List<Table> tables = model.getTables();
         if (tables != null && !tables.isEmpty()) {
+            Predicate<Column> filter = getColumnFilterGenerator().generateEntityFieldsFilter();
             tables.stream().forEach(table -> {
-                String entityName = getEntityName(table.getName(), true, tableNamePrefix);
+                String entityName = NameUtil.getEntityName(table.getName(), true, tableNamePrefix);
                 File file = new File(parentPath + "/entity", entityName + ".java");
                 try (BufferedWriter bw = new BufferedWriter(new FileWriter(file))) {
                     bw.append("package ").append(basePackage).append(".entity;\r\n\r\n");
@@ -397,13 +403,7 @@ public abstract class CodeGeneratorAdapter implements ICodeGenerator {
                     bw.append("public class ").append(entityName).append(" extends TrackableEntity {\r\n");
                     List<Column> columns = table.getColumns();
                     if (columns != null && !columns.isEmpty()) {
-                        columns.stream().filter(column -> {
-                            String code = column.getName();
-                            if ("id".equalsIgnoreCase(code) || "create_date".equalsIgnoreCase(code) || "update_date".equalsIgnoreCase(code)) {
-                                return false;
-                            }
-                            return true;
-                        }).forEach(column -> {
+                        columns.stream().filter(filter).forEach(column -> {
                             try {
                                 String type = column.getDataType();
                                 if (type == null) {
@@ -413,7 +413,7 @@ public abstract class CodeGeneratorAdapter implements ICodeGenerator {
                                     type = type.substring(0, type.indexOf("("));
                                 }
                                 String javaType = mapping.get(type);
-                                String field = getFieldName(column.getName(), false, tableNamePrefix);
+                                String field = NameUtil.getFieldName(column.getName(), false, tableNamePrefix);
                                 bw.append("\t@ApiModelProperty(value = \"").append(column.getDescription()).append("\")\r\n");
                                 bw.append("\tprivate ").append(javaType).append(" ").append(field).append(";\r\n");
                             } catch (IOException e) {
@@ -421,13 +421,7 @@ public abstract class CodeGeneratorAdapter implements ICodeGenerator {
                             }
                         });
                         bw.append("\r\n\r\n");
-                        columns.stream().filter(column -> {
-                            String code = column.getName();
-                            if ("id".equalsIgnoreCase(code) || "create_date".equalsIgnoreCase(code) || "update_date".equalsIgnoreCase(code)) {
-                                return false;
-                            }
-                            return true;
-                        }).forEach(column -> {
+                        columns.stream().filter(filter).forEach(column -> {
                             try {
                                 String type = column.getDataType();
                                 if (type == null) {
@@ -437,8 +431,8 @@ public abstract class CodeGeneratorAdapter implements ICodeGenerator {
                                     type = type.substring(0, type.indexOf("("));
                                 }
                                 String javaType = mapping.get(type);
-                                String field = getFieldName(column.getName(), false, tableNamePrefix);
-                                String getterSetterName = getEntityName(column.getName(), false, tableNamePrefix);
+                                String field = NameUtil.getFieldName(column.getName(), false, tableNamePrefix);
+                                String getterSetterName = NameUtil.getEntityName(column.getName(), false, tableNamePrefix);
                                 // generate getter, setter
                                 bw.append("\tpublic ").append(javaType).append(" get").append(getterSetterName).append("() {\r\n").append("\t\treturn ").append(field).append(";\r\n").append("\t}\r\n");
                                 bw.append("\tpublic void set").append(getterSetterName).append("(").append(javaType).append(" ").append(field).append(") {\r\n").append("\t\tthis.").append(field).append(" = ").append(field).append(";\r\n").append("\t}\r\n");
@@ -456,39 +450,6 @@ public abstract class CodeGeneratorAdapter implements ICodeGenerator {
         }
     }
 
-    private String getEntityName(String name, boolean hasPrefix, String tableNamePrefix) {
-        if (hasPrefix && name.startsWith(tableNamePrefix)) {
-            name = name.substring(tableNamePrefix.length());
-        }
-        String[] names = name.split("_");
-        StringBuilder sb = new StringBuilder();
-        if (names != null && names.length > 0) {
-            for (int i = 0; i < names.length; i++) {
-                sb.append(camel(names[i]));
-            }
-        }
-        return sb.toString();
-    }
-
-    private String getFieldName(String name, boolean hasPrefix, String tableNamePrefix) {
-        if (hasPrefix && name.startsWith(tableNamePrefix)) {
-            name = name.substring(tableNamePrefix.length());
-        }
-        String[] names = name.split("_");
-        StringBuilder sb = new StringBuilder();
-        if (names != null && names.length > 0) {
-            sb.append(names[0]);
-            for (int i = 1; i < names.length; i++) {
-                sb.append(camel(names[i]));
-            }
-        }
-        return sb.toString();
-    }
-
-    private String camel(String name) {
-        return String.valueOf(name.charAt(0)).toUpperCase() + name.substring(1);
-    }
-
     public void genRestful(IModel model, String parentPath, String tableNamePrefix, String basePackage) {
         check(model);
         new File(parentPath + "/restful").mkdirs();
@@ -504,7 +465,7 @@ public abstract class CodeGeneratorAdapter implements ICodeGenerator {
             }
             final BufferedWriter constantBw = bufferedWriter;
             tables.stream().forEach(table -> {
-                String entityName = getEntityName(table.getName(), true, tableNamePrefix);
+                String entityName = NameUtil.getEntityName(table.getName(), true, tableNamePrefix);
                 if (constantBw != null) {
                     try {
                         constantBw.append("public static final String ").append(entityName.toUpperCase()).append(" = \"").append(entityName.toLowerCase()).append("\";\r\n");
@@ -556,8 +517,8 @@ public abstract class CodeGeneratorAdapter implements ICodeGenerator {
         List<Table> tables = model.getTables();
         if (tables != null && !tables.isEmpty()) {
             tables.stream().forEach(table -> {
-                String entityName = getEntityName(table.getName(), true, tableNamePrefix);
-                String field = getFieldName(table.getName(), true, tableNamePrefix);
+                String entityName = NameUtil.getEntityName(table.getName(), true, tableNamePrefix);
+                String field = NameUtil.getFieldName(table.getName(), true, tableNamePrefix);
                 // dubbo interface
                 File file = new File(parentPath + "/dubbo", "I" + entityName + "Provider.java");
                 try (BufferedWriter bw = new BufferedWriter(new FileWriter(file))) {
@@ -605,8 +566,8 @@ public abstract class CodeGeneratorAdapter implements ICodeGenerator {
             File consumer1 = new File(parentPath + "/dubbo", "Consumer.java");
             try (BufferedWriter bw = new BufferedWriter(new FileWriter(consumer1))) {
                 tables.stream().forEach(table -> {
-                    String entityName = getEntityName(table.getName(), true, tableNamePrefix);
-                    String field = getFieldName(table.getName(), true, tableNamePrefix);
+                    String entityName = NameUtil.getEntityName(table.getName(), true, tableNamePrefix);
+                    String field = NameUtil.getFieldName(table.getName(), true, tableNamePrefix);
 
                     try {
                         bw.append("\t/**\r\n");
@@ -635,8 +596,8 @@ public abstract class CodeGeneratorAdapter implements ICodeGenerator {
             File consumer2 = new File(parentPath + "/dubbo", "consumer.xml");
             try (BufferedWriter bw = new BufferedWriter(new FileWriter(consumer2))) {
                 tables.stream().forEach(table -> {
-                    String entityName = getEntityName(table.getName(), true, tableNamePrefix);
-                    String field = getFieldName(table.getName(), true, tableNamePrefix);
+                    String entityName = NameUtil.getEntityName(table.getName(), true, tableNamePrefix);
+                    String field = NameUtil.getFieldName(table.getName(), true, tableNamePrefix);
 
                     try {
                         bw.append("\t<!-- ").append(table.getDescription()).append(" -->\r\n");
@@ -655,8 +616,8 @@ public abstract class CodeGeneratorAdapter implements ICodeGenerator {
             File provider = new File(parentPath + "/dubbo", "provider.xml");
             try (BufferedWriter bw = new BufferedWriter(new FileWriter(provider))) {
                 tables.stream().forEach(table -> {
-                    String entityName = getEntityName(table.getName(), true, tableNamePrefix);
-                    String field = getFieldName(table.getName(), true, tableNamePrefix);
+                    String entityName = NameUtil.getEntityName(table.getName(), true, tableNamePrefix);
+                    String field = NameUtil.getFieldName(table.getName(), true, tableNamePrefix);
 
                     try {
                         bw.append("\t<!-- ").append(table.getDescription()).append(" -->\r\n");
@@ -681,8 +642,8 @@ public abstract class CodeGeneratorAdapter implements ICodeGenerator {
         List<Table> tables = model.getTables();
         if (tables != null && !tables.isEmpty()) {
             tables.stream().forEach(table -> {
-                String entityName = getEntityName(table.getName(), true, tableNamePrefix);
-                String field = getFieldName(table.getName(), true, tableNamePrefix);
+                String entityName = NameUtil.getEntityName(table.getName(), true, tableNamePrefix);
+                String field = NameUtil.getFieldName(table.getName(), true, tableNamePrefix);
                 Predicate<Column> filter = getAvailKeyColumnFilterGenerator().generateNonKeyColumnFilter(table);
 
                 // mapper interface
@@ -731,7 +692,7 @@ public abstract class CodeGeneratorAdapter implements ICodeGenerator {
                                 if ("varchar".equalsIgnoreCase(type) || type.toLowerCase().contains("text")) {
                                     type = "VARCHAR";
                                 }
-                                bw.append("\t\t<result column=\"").append(column.getName()).append("\" property=\"").append(getFieldName(column.getName(), false, tableNamePrefix)).append("\" jdbcType=\"").append(type.toUpperCase()).append("\"/>\r\n");
+                                bw.append("\t\t<result column=\"").append(column.getName()).append("\" property=\"").append(NameUtil.getFieldName(column.getName(), false, tableNamePrefix)).append("\" jdbcType=\"").append(type.toUpperCase()).append("\"/>\r\n");
                             } catch (IOException e) {
                                 e.printStackTrace();
                             }
@@ -758,7 +719,7 @@ public abstract class CodeGeneratorAdapter implements ICodeGenerator {
                     if (columns != null && !columns.isEmpty()) {
                         List<String> names = new ArrayList<>();
                         bw.append(String.join(",", columns.stream().map(column -> {
-                            return "#{" + getFieldName(column.getName(), false, tableNamePrefix) + "}";
+                            return "#{" + NameUtil.getFieldName(column.getName(), false, tableNamePrefix) + "}";
                         }).collect(Collectors.toList())));
                     }
                     bw.append(")\r\n");
@@ -812,7 +773,7 @@ public abstract class CodeGeneratorAdapter implements ICodeGenerator {
 
                         columns.stream().filter(filter).forEach(column -> {
                             try {
-                                String fieldName = getFieldName(column.getName(), false, tableNamePrefix);
+                                String fieldName = NameUtil.getFieldName(column.getName(), false, tableNamePrefix);
                                 bw.append("\t\t\t<if test=\"").append(fieldName).append(" != null  and ").append(fieldName).append(" != '' \">\r\n");
                                 bw.append("\t\t\t\t<![CDATA[\r\n");
 //                                bw.append("\t\t\t\t\tand ").append(column.getDescription()).append(" LIKE CONCAT('%', #{").append(fieldName).append("}, '%')\r\n");
@@ -832,7 +793,7 @@ public abstract class CodeGeneratorAdapter implements ICodeGenerator {
                     if (columns != null && !columns.isEmpty()) {
                         columns.stream().filter(filter).forEach(column -> {
                             try {
-                                String fieldName = getFieldName(column.getName(), false, tableNamePrefix);
+                                String fieldName = NameUtil.getFieldName(column.getName(), false, tableNamePrefix);
                                 bw.append("\t\t\t<if test=\"").append(fieldName).append(" != null  and ").append(fieldName).append(" != '' \">\r\n");
                                 bw.append("\t\t\t\t<![CDATA[\r\n");
 //                                bw.append("\t\t\t\t\tand ").append(column.getDescription()).append(" LIKE CONCAT('%', #{").append(fieldName).append("}, '%')\r\n");
@@ -852,7 +813,7 @@ public abstract class CodeGeneratorAdapter implements ICodeGenerator {
                     if (columns != null && !columns.isEmpty()) {
                         columns.stream().filter(filter).forEach(column -> {
                             try {
-                                String fieldName = getFieldName(column.getName(), false, tableNamePrefix);
+                                String fieldName = NameUtil.getFieldName(column.getName(), false, tableNamePrefix);
                                 bw.append("\t\t\t<if test=\"").append(fieldName).append(" != null  and ").append(fieldName).append(" != '' \">\r\n");
                                 bw.append("\t\t\t\t<![CDATA[\r\n");
 //                                bw.append("\t\t\t\t\tand ").append(column.getDescription()).append(" LIKE CONCAT('%', #{").append(fieldName).append("}, '%')\r\n");
@@ -872,7 +833,7 @@ public abstract class CodeGeneratorAdapter implements ICodeGenerator {
                     if (columns != null && !columns.isEmpty()) {
                         columns.stream().filter(filter).forEach(column -> {
                             try {
-                                String fieldName = getFieldName(column.getName(), false, tableNamePrefix);
+                                String fieldName = NameUtil.getFieldName(column.getName(), false, tableNamePrefix);
                                 bw.append("\t\t\t<if test=\"").append(fieldName).append(" != null  and ").append(fieldName).append(" != '' \">\r\n");
                                 bw.append("\t\t\t\t<![CDATA[\r\n");
 //                                bw.append("\t\t\t\t\tand ").append(column.getDescription()).append(" LIKE CONCAT('%', #{").append(fieldName).append("}, '%')\r\n");
@@ -892,7 +853,7 @@ public abstract class CodeGeneratorAdapter implements ICodeGenerator {
                     if (columns != null && !columns.isEmpty()) {
                         columns.stream().filter(filter).forEach(column -> {
                             try {
-                                String fieldName = getFieldName(column.getName(), false, tableNamePrefix);
+                                String fieldName = NameUtil.getFieldName(column.getName(), false, tableNamePrefix);
                                 bw.append("\t\t\t<if test=\"").append(fieldName).append(" != null  and ").append(fieldName).append(" != '' \">\r\n");
                                 bw.append("\t\t\t\t<![CDATA[\r\n");
                                 bw.append("\t\t\t\t\t").append("`" + column.getName() + "`").append(" = #{").append(fieldName).append("},\r\n");

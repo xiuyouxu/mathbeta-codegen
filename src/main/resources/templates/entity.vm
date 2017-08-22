@@ -10,19 +10,31 @@ import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 #set($entityName="#getEntityName($table.name,true,$tableNamePrefix)")
 /**
- * $table.description
- * Created by xiuyou.xu on 2017/7/4.
- */
+* $table.description
+*
+* Created by xiuyou.xu on #getCurrentDate().
+*/
 @ApiModel(value = "${entityName}", description = "$table.description")
 @XmlAccessorType(XmlAccessType.FIELD)
 public class ${entityName} extends TrackableEntity {
-    #foreach($column in $table.columns)#set($fieldName="#getFieldName($column.name,false,"""")")
+#foreach($column in $table.columns)
+    #set($inherited="#fieldInherited($column.name)")
+    #if($inherited == "n")
+    #set($fieldName="#getFieldName($column.name,false,"""")")
+
+    ##   @NotNull(message = "$column.description", groups = {BeanValidationGroups.CreateGroup.class})
+
     @ApiModelProperty(value="$column.description")
-    @NotNull(message = "$column.description", groups = {BeanValidationGroups.CreateGroup.class})
     private #getJavaType($column.dataType) ${fieldName};
     #end
+    #end
 
-    #foreach($column in $table.columns)#set($fieldName="#getFieldName($column.name,false,"""")")#set($javaType="#getJavaType($column.dataType)")
+    #foreach($column in $table.columns)
+    #set($inherited="#fieldInherited($column.name)")
+    #if($inherited == "n")
+    #set($fieldName="#getFieldName($column.name,false,"""")")
+    #set($javaType="#getJavaType($column.dataType)")
+
     public ${javaType} get#getEntityName($column.name,false,"") () {
         return ${fieldName};
     }
@@ -31,4 +43,6 @@ public class ${entityName} extends TrackableEntity {
         this.${fieldName} = ${fieldName};
     }
     #end
+    #end
+
 }

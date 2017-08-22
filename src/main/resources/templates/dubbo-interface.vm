@@ -9,7 +9,7 @@ import java.util.Map;
 #set($entityName="#getEntityName($table.name,true,$tableNamePrefix)")
 /**
 * $table.description
-* Created by xiuyou.xu on 2017/7/4.
+* Created by xiuyou.xu on #getCurrentDate().
 */
 public interface I${entityName}Provider extends DubboBaseInterface<${entityName}> {
 

@@ -45,7 +45,7 @@ public class ColumnJdbcTypeDirective extends Directive {
                 if ("varchar".equalsIgnoreCase(type) || type.toLowerCase().contains("text")) {
                     type = "VARCHAR";
                 }
-                writer.write(type);
+                writer.write(type.toUpperCase());
             }
         }
         return true;

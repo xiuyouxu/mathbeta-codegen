@@ -9,7 +9,7 @@ import javax.ws.rs.Path;
 #set($entityName="#getEntityName($table.name,true,$tableNamePrefix)")
 /**
  * $table.description
- * Created by xiuyou.xu on 2017/7/4.
+ * Created by xiuyou.xu on #getCurrentDate().
  */
 @Api(value = "$table.description", description = "$table.description"/*, authorizations = {@Authorization(value = "mesoauth", scopes = {@AuthorizationScope(scope = "$entityName.toLowerCase()", description = "$table.description")})}*/)
 @Path(RestConstants.RestPathPrefix.$entityName.toUpperCase())

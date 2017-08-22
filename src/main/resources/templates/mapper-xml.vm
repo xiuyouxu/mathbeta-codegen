@@ -5,13 +5,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.mes.control.mapper.${entityName}Mapper}">
 
-
+<!-- $table.description -->
+<mapper namespace="com.mes.control.mapper.${entityName}Mapper">
     <resultMap type="com.mes.entity.control.$entityName" id="${fieldName}ResultMap">
         #foreach($column in $table.columns)
+
         <result column="$column.name" property="#getFieldName($column.name,false,"""")" jdbcType="#getJdbcType($column.dataType)"/>
         #end
+
     </resultMap>
 
 
@@ -72,76 +74,84 @@
         SELECT #joinColumns($table.columns,"`","`") from $table.name  s
     </sql>
 
-    #set($columnsLike="#joinColumnsLike($table.columns, ""CONCAT('%', ${fieldLeft}_search${fieldRight}, '%')"",""`"",""`"")")
+    #set($columnsLike="#joinColumnsLike($table.columns, ""CONCAT('%', ${fieldLeft}search${fieldRight}, '%')"",""`"",""`"")")
     <!--查询条件-->
     <sql id="sql_where_and_equal">
         <where>
-            <if test="_search != null and _search != '' ">
+            <if test="search != null and search != '' ">
                 and (
                 $columnsLike
                 )
             </if>
             #foreach($column in $table.columns)#set($fieldName="#getFieldName($column.name,false,"""")")
+
             <if test="$fieldName != null  and $fieldName != '' ">
             <![CDATA[
-            and `$column.name` = ${fieldLeft}$fieldName${fieldRight}
+                and `$column.name` = ${fieldLeft}$fieldName${fieldRight}
             ]]>
             </if>
             #end
+
         </where>
     </sql>
 
     <!--查询条件-->
     <sql id="sql_where_or_equal">
         <where>
-            <if test="_search != null and _search != '' ">
-                and (
+            <if test="search != null and search != '' ">
+                or (
                 $columnsLike
                 )
             </if>
             #foreach($column in $table.columns)#set($fieldName="#getFieldName($column.name,false,"""")")
-                <if test="$fieldName != null  and $fieldName != '' ">
-                <![CDATA[
+
+            <if test="$fieldName != null  and $fieldName != '' ">
+            <![CDATA[
                 or `$column.name` = ${fieldLeft}$fieldName${fieldRight}
-                ]]>
-                </if>
+            ]]>
+            </if>
             #end
+
         </where>
     </sql>
 
     <!--查询条件-->
     <sql id="sql_where_and_like">
         <where>
-            <if test="_search != null and _search != '' ">
+            <if test="search != null and search != '' ">
                 and (
                 $columnsLike
                 )
             </if>
             #foreach($column in $table.columns)#set($fieldName="#getFieldName($column.name,false,"""")")
-                <if test="$fieldName != null  and $fieldName != '' ">
-                <![CDATA[
+
+            <if test="$fieldName != null  and $fieldName != '' ">
+            <![CDATA[
                 and `$column.name` CONCAT('%', ${fieldLeft}$fieldName${fieldRight}, '%')
-                ]]>
-                </if>
+            ]]>
+            </if>
             #end
+
         </where>
     </sql>
 
     <!--查询条件-->
     <sql id="sql_where_or_like">
         <where>
-            <if test="_search != null and _search != '' ">
-                and (
+            <if test="search != null and search != '' ">
+                or (
                 $columnsLike
                 )
             </if>
             #foreach($column in $table.columns)#set($fieldName="#getFieldName($column.name,false,"""")")
-                <if test="$fieldName != null  and $fieldName != '' ">
-                <![CDATA[
+
+            <if test="$fieldName != null  and $fieldName != '' ">
+            <![CDATA[
                 or `$column.name` CONCAT('%', ${fieldLeft}$fieldName${fieldRight}, '%')
-                ]]>
-                </if>
+            ]]>
+            </if>
             #end
+
         </where>
     </sql>
 
@@ -149,12 +159,14 @@
     <sql id="sql_update">
         <set>
             #foreach($column in $table.columns)#set($fieldName="#getFieldName($column.name,false,"""")")
-                <if test="$fieldName != null  and $fieldName != '' ">
-                    <![CDATA[
-                    `$column.name` = ${fieldLeft}$fieldName${fieldRight},
-                    ]]>
-                </if>
+
+            <if test="$fieldName != null  and $fieldName != '' ">
+            <![CDATA[
+                `$column.name` = ${fieldLeft}$fieldName${fieldRight},
+            ]]>
+            </if>
             #end
+
         </set>
     </sql>
 </mapper>

@@ -1,7 +1,7 @@
 package com.mathbeta.models.pdm;
 
 import com.mathbeta.models.IModel;
-import com.mathbeta.models.KeyColumnFilterGenerator;
+import com.mathbeta.models.ColumnFilterGenerator;
 import com.mathbeta.models.Table;
 import com.mathbeta.models.common.CodeGeneratorAdapter;
 import org.xml.sax.InputSource;
@@ -25,7 +25,7 @@ import java.util.function.Predicate;
  */
 public class PDMCodegen extends CodeGeneratorAdapter {
     public static void main(String[] args) {
-        PDMCodegen codegen = new PDMCodegen(new File("D:\\mes-db.pdm"), "mes_", "pdm-code-gen", "com.mes");
+        PDMCodegen codegen = new PDMCodegen(new File("D:\\workspace\\MES5.0实施项目\\05 蓝图设计\\db设计\\mes-db.pdm"), "mes_", "pdm-code-gen", "com.mes");
         PDMModel model = codegen.read();
         codegen.generateCode(model, codegen.getInput().getParent() + "/" + codegen.getSubDir(), codegen.getTableNamePrefix(), codegen.getBasePackageName());
     }
@@ -112,8 +112,8 @@ public class PDMCodegen extends CodeGeneratorAdapter {
     }
 
     @Override
-    public KeyColumnFilterGenerator getKeyColumnFilterGenerator() {
-        return new KeyColumnFilterGenerator<PDMColumn, PDMKey>() {
+    public ColumnFilterGenerator getColumnFilterGenerator() {
+        return new ColumnFilterGenerator<PDMColumn, PDMKey>() {
             @Override
             public Predicate<PDMColumn> generateNonKeyColumnFilter(Table table) {
                 return column -> {
@@ -138,6 +138,17 @@ public class PDMCodegen extends CodeGeneratorAdapter {
                         });
                     }
                     return false;
+                };
+            }
+
+            @Override
+            public Predicate<PDMColumn> generateEntityFieldsFilter() {
+                return column -> {
+                    String name = column.getName();
+                    if ("id".equalsIgnoreCase(name) || "create_date".equalsIgnoreCase(name) || "update_date".equalsIgnoreCase(name)) {
+                        return false;
+                    }
+                    return true;
                 };
             }
         };

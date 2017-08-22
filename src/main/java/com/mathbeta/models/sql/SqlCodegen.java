@@ -1,7 +1,7 @@
 package com.mathbeta.models.sql;
 
 import com.google.common.collect.Lists;
-import com.mathbeta.models.KeyColumnFilterGenerator;
+import com.mathbeta.models.ColumnFilterGenerator;
 import com.mathbeta.models.common.CodeGeneratorAdapter;
 import net.sf.jsqlparser.JSQLParserException;
 import net.sf.jsqlparser.parser.CCJSqlParserUtil;
@@ -30,7 +30,7 @@ public class SqlCodegen extends CodeGeneratorAdapter {
     }
 
     @Override
-    public KeyColumnFilterGenerator getKeyColumnFilterGenerator() {
+    public ColumnFilterGenerator getColumnFilterGenerator() {
         return null;
     }
 
