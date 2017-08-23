@@ -16,7 +16,6 @@
 
     </resultMap>
 
-
     <!--根据id查询-->
     <select id="findById"  resultMap="${fieldName}ResultMap">
         <include refid="sql_select"/>
@@ -49,6 +48,7 @@
         <include refid="sql_where_and_equal"/>
     </select>
 
+    <!--分页查询记录-->
     <select id="findByPage"  parameterType="java.util.Map" resultMap="${fieldName}ResultMap">
         <include refid="sql_select"/>
         <include refid="sql_where_and_equal"/>
@@ -56,19 +56,20 @@
         limit ${fieldLeft}startRowNum${fieldRight},${fieldLeft}pageSize${fieldRight}
     </select>
 
-
     <!--根据条件查询-->
     <select id="findByMap"  parameterType="java.util.Map" resultMap="${fieldName}ResultMap">
         <include refid="sql_select"/>
         <include refid="sql_where_and_equal"/>
         order by s.create_date desc
     </select>
+
     <!--查询所有-->
     <select id="findAll"  resultMap="${fieldName}ResultMap">
         <include refid="sql_select"/>
         <include refid="sql_where_and_equal"/>
         order by s.create_date desc
     </select>
+
     <!--查询字段-->
     <sql id="sql_select">
         SELECT #joinColumns($table.columns,"`","`") from $table.name  s
