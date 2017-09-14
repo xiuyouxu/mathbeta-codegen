@@ -12,5 +12,6 @@ import java.util.Map;
 * Created by xiuyou.xu on #getCurrentDate().
 */
 public interface I${entityName}Provider extends DubboBaseInterface<${entityName}> {
-
+    Object getTemplate(String param) throws DubboProviderException;
+    Object postTemplate(String param) throws DubboProviderException;
 }

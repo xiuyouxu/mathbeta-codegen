@@ -5,7 +5,8 @@ import com.mes.dubbo.consumer.ControlConsumer;
 import com.mes.utils.RestConstants;
 import io.swagger.annotations.Api;
 
-import javax.ws.rs.Path;
+import javax.ws.rs.*;
+import javax.ws.rs.core.MediaType;
 #set($entityName="#getEntityName($table.name,true,$tableNamePrefix)")
 /**
  * $table.description
@@ -17,5 +18,34 @@ public class ${entityName}RestServer extends BaseRestServerInterfaceImpl<${entit
     @Override
     public I${entityName}Provider getDubboBaseInterface() {
         return ControlConsumer.get${entityName}Provider();
+    }
+
+    @GET
+    @Path("/getTemplate")
+    @Produces(MediaType.APPLICATION_JSON)
+    public jsonView getTemplate(@QueryParam("param") String param) {
+        try {
+            Object ret = getDubboBaseInterface().getTemplate(param);
+            jsonView.success(ret);
+        } catch (Exception e) {
+            e.printStackTrace();
+            jsonView.fail(e.getMessage());
+        }
+        return jsonView;
+    }
+
+    @POST
+    @Path("/postTemplate")
+//  @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public jsonView postTemplate(@FormParam("param") String param) {
+        try {
+            Object ret = getDubboBaseInterface().postTemplate(param);
+            jsonView.success(ret);
+        } catch (Exception e) {
+            e.printStackTrace();
+            jsonView.fail(e.getMessage());
+        }
+        return jsonView;
     }
 }

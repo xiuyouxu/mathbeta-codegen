@@ -26,4 +26,14 @@ public class ${entityName}ProviderImpl extends BaseProviderImpl<${entityName}> i
     public ${entityName}Mapper getBaseInterfaceMapper() {
         return ${fieldName}Mapper;
     }
+
+    @Override
+    public Object getTemplate(String param) throws DubboProviderException {
+        return param;
+    }
+
+    @Override
+    public Object postTemplate(String param) throws DubboProviderException {
+        return param;
+    }
 }
