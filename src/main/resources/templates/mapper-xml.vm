@@ -128,7 +128,7 @@
 
             <if test="$fieldName != null  and $fieldName != '' ">
             <![CDATA[
-                and `$column.name` CONCAT('%', ${fieldLeft}$fieldName${fieldRight}, '%')
+                and `$column.name` like CONCAT('%', ${fieldLeft}$fieldName${fieldRight}, '%')
             ]]>
             </if>
             #end
@@ -148,7 +148,7 @@
 
             <if test="$fieldName != null  and $fieldName != '' ">
             <![CDATA[
-                or `$column.name` CONCAT('%', ${fieldLeft}$fieldName${fieldRight}, '%')
+                or `$column.name` like CONCAT('%', ${fieldLeft}$fieldName${fieldRight}, '%')
             ]]>
             </if>
             #end
