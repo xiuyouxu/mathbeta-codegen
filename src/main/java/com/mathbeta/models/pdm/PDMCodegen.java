@@ -25,7 +25,7 @@ import java.util.function.Predicate;
  */
 public class PDMCodegen extends CodeGeneratorAdapter {
     public static void main(String[] args) {
-        PDMCodegen codegen = new PDMCodegen(new File("D:\\workspace\\MES5.0实施项目\\05 蓝图设计\\db设计\\mes-db.pdm"), "mes_", "pdm-code-gen", "com.mes");
+        PDMCodegen codegen = new PDMCodegen(new File("D:\\workspace\\MES5.0实施项目\\05 蓝图设计\\MES 5.0设计\\数据库设计\\mes-db.pdm"), "mes_", "pdm-code-gen", "com.mes");
         PDMModel model = codegen.read();
         codegen.generateCode(model, codegen.getInput().getParent() + "/" + codegen.getSubDir(), codegen.getTableNamePrefix(), codegen.getBasePackageName());
     }
