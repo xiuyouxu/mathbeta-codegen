@@ -34,6 +34,9 @@ public class NameUtil {
     }
 
     public static String camel(String name) {
+        if (name == null || name.isEmpty()) {
+            return "";
+        }
         return String.valueOf(name.charAt(0)).toUpperCase() + name.substring(1);
     }
 }
